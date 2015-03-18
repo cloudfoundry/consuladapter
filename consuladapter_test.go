@@ -10,23 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const clusterStartingPort = 9000
-const clusterSize = 3
-
 var _ = Describe("Cluster Runner Integration", func() {
-	var clusterRunner consuladapter.ClusterRunner
-	var adapter consuladapter.Adapter
-
-	BeforeEach(func() {
-		clusterRunner = consuladapter.NewClusterRunner(clusterStartingPort, clusterSize)
-		clusterRunner.Start()
-		adapter = clusterRunner.NewAdapter()
-	})
-
-	AfterEach(func() {
-		clusterRunner.Stop()
-	})
-
 	It("Provides mutual exclusion via locks", func() {
 		By("one adapter acquiring the lock")
 		_, err := adapter.AcquireAndMaintainLock("key", []byte("value"), structs.SessionTTLMin, make(chan struct{}))

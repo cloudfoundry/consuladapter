@@ -19,6 +19,7 @@ type ClusterRunner interface {
 	Start()
 	Stop()
 	NewAdapter() Adapter
+	Reset()
 }
 
 type clusterRunner struct {
@@ -136,4 +137,9 @@ func (cr *clusterRunner) NewAdapter() Adapter {
 	Ω(err).ShouldNot(HaveOccurred())
 
 	return adapter
+}
+
+func (cr *clusterRunner) Reset() {
+	err := cr.NewAdapter().reset()
+	Ω(err).ShouldNot(HaveOccurred())
 }

@@ -15,6 +15,8 @@ type Adapter interface {
 	GetValue(key string) ([]byte, error)
 	ListPairsExtending(prefix string) (map[string][]byte, error)
 	SetValue(key string, value []byte) error
+
+	reset() error
 }
 
 func NewAdapter(addresses []string, scheme, datacenter string) (*adapter, error) {
@@ -120,6 +122,15 @@ func (a *adapter) ListPairsExtending(prefix string) (map[string][]byte, error) {
 
 func (a *adapter) SetValue(key string, value []byte) error {
 	return a.clientPool.kvPut(key, value)
+}
+
+func (a *adapter) reset() error {
+	err := a.clientPool.kvDeleteTree("")
+	if err != nil {
+		return err
+	}
+
+	return a.clientPool.sessionDestroyAll()
 }
 
 func NewCancelledLockAttemptError(key string) error {

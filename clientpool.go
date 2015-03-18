@@ -75,6 +75,45 @@ func (cp *clientPool) kvPut(key string, value []byte) error {
 	return poolError(err)
 }
 
+func (cp *clientPool) kvDeleteTree(prefix string) error {
+	var err error
+
+	for _, client := range cp.clients {
+		_, err = client.KV().DeleteTree(prefix, nil)
+		if err == nil {
+			return nil
+		}
+	}
+
+	return poolError(err)
+}
+
+func (cp *clientPool) sessionDestroyAll() error {
+	var err error
+
+	for _, client := range cp.clients {
+		var sessions []*api.SessionEntry
+		sessions, _, err = client.Session().List(nil)
+		if err != nil {
+			continue
+		}
+
+		for _, session := range sessions {
+			_, err = client.Session().Destroy(session.ID, nil)
+			if err != nil {
+				break
+			}
+		}
+
+		if err == nil {
+			return nil
+		}
+	}
+
+	return poolError(err)
+
+}
+
 func poolError(err error) error {
 	return fmt.Errorf("all client requests failed; last error message: %s", err.Error())
 }
