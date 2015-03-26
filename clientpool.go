@@ -83,9 +83,6 @@ func (cp *clientPool) kvList(prefix string) (api.KVPairs, error) {
 		kvPairs, _, err = client.KV().List(prefix, nil)
 
 		if err == nil {
-			if kvPairs == nil {
-				return nil, NewPrefixNotFoundError(prefix)
-			}
 			return kvPairs, nil
 		}
 	}

@@ -11,17 +11,23 @@ import (
 )
 
 var _ = Describe("Locking", func() {
+	lock := func(key string) {
+		Eventually(func() error {
+			_, err := adapter.AcquireAndMaintainLock(key, []byte("value"), structs.SessionTTLMin, nil)
+			return err
+		}).ShouldNot(HaveOccurred())
+	}
+
 	It("Provides mutual exclusion via locks", func() {
 		By("One adapter acquiring the lock")
-		_, err := adapter.AcquireAndMaintainLock("key", []byte("value"), structs.SessionTTLMin, make(chan struct{}))
-		Ω(err).ShouldNot(HaveOccurred())
+		lock("key")
 
 		By("Another adapter trying to aquire the lock")
 		otherAdapter := clusterRunner.NewAdapter()
 		cancelChan := make(chan struct{})
 		errChan := make(chan error)
 		go func() {
-			_, err = otherAdapter.AcquireAndMaintainLock("key", []byte("value"), structs.SessionTTLMin, cancelChan)
+			_, err := otherAdapter.AcquireAndMaintainLock("key", []byte("value"), structs.SessionTTLMin, cancelChan)
 			if err != nil {
 				errChan <- err
 			}
@@ -33,7 +39,7 @@ var _ = Describe("Locking", func() {
 		By("The other adapter trying to acquire the lock after the TTL")
 		time.Sleep(structs.SessionTTLMin + time.Second)
 		go func() {
-			_, err = otherAdapter.AcquireAndMaintainLock("key", []byte("value"), structs.SessionTTLMin, cancelChan)
+			_, err := otherAdapter.AcquireAndMaintainLock("key", []byte("value"), structs.SessionTTLMin, cancelChan)
 			if err != nil {
 				errChan <- err
 			}
@@ -43,7 +49,7 @@ var _ = Describe("Locking", func() {
 		Eventually(errChan).Should(Receive(Equal(consuladapter.NewCancelledLockAttemptError("key"))))
 
 		By("Releasing the lock")
-		err = adapter.ReleaseAndDeleteLock("key")
+		err := adapter.ReleaseAndDeleteLock("key")
 		Ω(err).ShouldNot(HaveOccurred())
 
 		By("The second adapter acquiring the lock")
@@ -52,14 +58,13 @@ var _ = Describe("Locking", func() {
 	})
 
 	It("Associates data with locks", func() {
-		_, err := adapter.AcquireAndMaintainLock("key", []byte("value"), structs.SessionTTLMin, make(chan struct{}))
-		Ω(err).ShouldNot(HaveOccurred())
+		lock("key")
 
 		Consistently(func() ([]byte, error) {
 			return adapter.GetValue("key")
 		}).Should(Equal([]byte("value")))
 
-		err = adapter.ReleaseAndDeleteLock("key")
+		err := adapter.ReleaseAndDeleteLock("key")
 		Ω(err).ShouldNot(HaveOccurred())
 
 		Eventually(func() error {

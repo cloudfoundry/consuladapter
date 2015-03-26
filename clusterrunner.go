@@ -19,6 +19,7 @@ type ClusterRunner interface {
 	Start()
 	Stop()
 	NewAdapter() Adapter
+	Addresses() []string
 	Reset()
 }
 
@@ -103,7 +104,7 @@ func (cr *clusterRunner) Start() {
 	Eventually(func() error {
 		_, err := cr.NewAdapter().ListPairsExtending("")
 		return err
-	}, 5).Should(Equal(NewPrefixNotFoundError("")))
+	}, 5).Should(BeNil())
 
 	cr.running = true
 }
@@ -126,7 +127,7 @@ func (cr *clusterRunner) Stop() {
 	cr.running = false
 }
 
-func (cr *clusterRunner) addresses() []string {
+func (cr *clusterRunner) Addresses() []string {
 	addresses := make([]string, cr.numNodes)
 	for i := 0; i < cr.numNodes; i++ {
 		addresses[i] = fmt.Sprintf("127.0.0.1:%d", cr.startingPort+i*PortOffsetLength+PortOffsetHTTP)
@@ -136,7 +137,7 @@ func (cr *clusterRunner) addresses() []string {
 }
 
 func (cr *clusterRunner) NewAdapter() Adapter {
-	adapter, err := NewAdapter(cr.addresses(), cr.scheme)
+	adapter, err := NewAdapter(cr.Addresses(), cr.scheme)
 	Ω(err).ShouldNot(HaveOccurred())
 
 	return adapter
