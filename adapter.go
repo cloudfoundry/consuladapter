@@ -8,25 +8,28 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
+const defaultWatchBlockDuration = 10 * time.Second
+
 type Adapter interface {
-	AcquireAndMaintainLock(key string, value []byte, ttl time.Duration, cancelChan <-chan struct{}) (<-chan struct{}, error)
+	AcquireAndMaintainLock(key string, value []byte, ttl time.Duration, cancelChan <-chan struct{}) (lost <-chan struct{}, err error)
 	ReleaseAndDeleteLock(key string) error
 
 	GetValue(key string) ([]byte, error)
 	ListPairsExtending(prefix string) (map[string][]byte, error)
 	SetValue(key string, value []byte) error
 
+	WatchForDisappearancesUnder(prefix string) (disappearance <-chan []string, cancel chan<- struct{}, err <-chan error)
+
 	reset() error
 }
 
-func NewAdapter(addresses []string, scheme, datacenter string) (*adapter, error) {
+func NewAdapter(addresses []string, scheme string) (Adapter, error) {
 	clients := make([]*api.Client, len(addresses))
 
 	for i, address := range addresses {
 		client, err := api.NewClient(&api.Config{
-			Address:    address,
-			Scheme:     scheme,
-			Datacenter: datacenter,
+			Address: address,
+			Scheme:  scheme,
 		})
 
 		if err != nil {
@@ -64,6 +67,8 @@ func (a *adapter) AcquireAndMaintainLock(key string, value []byte, ttl time.Dura
 		return nil, err
 	}
 
+	// Consul doesn't document this behaviour, but if the given cancelChan is
+	// closed or sent something, then Lock() returns nil, nil.
 	if err == nil && lostLockChan == nil {
 		return nil, NewCancelledLockAttemptError(key)
 	}
@@ -84,16 +89,12 @@ func (a *adapter) ReleaseAndDeleteLock(key string) error {
 	}
 
 	err := lock.Unlock()
-	if err != nil {
-		return err
-	}
-
-	err = lock.Destroy()
-	if err != nil {
+	if err != nil && err != api.ErrLockNotHeld {
 		return err
 	}
 
 	delete(a.locks, key)
+	_ = lock.Destroy() // best effort cleanup
 
 	return nil
 }
@@ -124,6 +125,46 @@ func (a *adapter) SetValue(key string, value []byte) error {
 	return a.clientPool.kvPut(key, value)
 }
 
+func (a *adapter) WatchForDisappearancesUnder(prefix string) (<-chan []string, chan<- struct{}, <-chan error) {
+	disappearanceChan := make(chan []string)
+	cancelChan := make(chan struct{})
+	errorChan := make(chan error, 1)
+
+	prefixNotFound := NewPrefixNotFoundError(prefix)
+	go func() {
+		defer close(disappearanceChan)
+		defer close(errorChan)
+
+		keys := keySet{}
+		var index uint64 = 0
+
+		for {
+			select {
+			case <-cancelChan:
+				return
+			default:
+				newKeyStrings, newIndex, err := a.clientPool.kvKeysWithWait(prefix, index, defaultWatchBlockDuration)
+				if err != nil {
+					if err != prefixNotFound || len(keys) == 0 {
+						errorChan <- err
+						return
+					}
+				}
+
+				newKeys := newKeySetFromStrings(newKeyStrings)
+				if missing := difference(keys, newKeys); len(missing) > 0 {
+					disappearanceChan <- missing
+				}
+
+				keys = newKeys
+				index = newIndex
+			}
+		}
+	}()
+
+	return disappearanceChan, cancelChan, errorChan
+}
+
 func (a *adapter) reset() error {
 	err := a.clientPool.kvDeleteTree("")
 	if err != nil {
@@ -131,6 +172,27 @@ func (a *adapter) reset() error {
 	}
 
 	return a.clientPool.sessionDestroyAll()
+}
+
+func newKeySetFromStrings(keyStrings []string) keySet {
+	newKeySet := keySet{}
+	for _, key := range keyStrings {
+		newKeySet[key] = struct{}{}
+	}
+	return newKeySet
+}
+
+type keySet map[string]struct{}
+
+func difference(a, b keySet) []string {
+	var missing []string
+	for key, _ := range a {
+		if _, ok := b[key]; !ok {
+			missing = append(missing, key)
+		}
+	}
+
+	return missing
 }
 
 func NewCancelledLockAttemptError(key string) error {

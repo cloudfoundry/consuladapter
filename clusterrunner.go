@@ -29,16 +29,15 @@ type clusterRunner struct {
 	running         bool
 	dataDir         string
 	configDir       string
+	scheme          string
 
 	mutex *sync.RWMutex
 }
 
-const defaultScheme = "http"
-const defaultDatacenter = "dc"
 const defaultDataDirPrefix = "consul_data"
 const defaultConfigDirPrefix = "consul_config"
 
-func NewClusterRunner(startingPort int, numNodes int) *clusterRunner {
+func NewClusterRunner(startingPort int, numNodes int, scheme string) *clusterRunner {
 	Ω(startingPort).Should(BeNumerically(">", 0))
 	Ω(startingPort).Should(BeNumerically("<", 1<<16))
 	Ω(numNodes).Should(BeNumerically(">", 0))
@@ -46,6 +45,7 @@ func NewClusterRunner(startingPort int, numNodes int) *clusterRunner {
 	return &clusterRunner{
 		startingPort: startingPort,
 		numNodes:     numNodes,
+		scheme:       scheme,
 
 		mutex: &sync.RWMutex{},
 	}
@@ -76,7 +76,6 @@ func (cr *clusterRunner) Start() {
 
 		configFilePath := writeConfigFile(
 			cr.configDir,
-			defaultDatacenter,
 			nodeDataDir,
 			iStr,
 			cr.startingPort,
@@ -104,7 +103,7 @@ func (cr *clusterRunner) Start() {
 	Eventually(func() error {
 		_, err := cr.NewAdapter().ListPairsExtending("")
 		return err
-	}, 5).ShouldNot(HaveOccurred())
+	}, 5).Should(Equal(NewPrefixNotFoundError("")))
 
 	cr.running = true
 }
@@ -127,13 +126,17 @@ func (cr *clusterRunner) Stop() {
 	cr.running = false
 }
 
-func (cr *clusterRunner) NewAdapter() Adapter {
+func (cr *clusterRunner) addresses() []string {
 	addresses := make([]string, cr.numNodes)
 	for i := 0; i < cr.numNodes; i++ {
-		addresses[i] = fmt.Sprintf("127.0.0.1:%d", cr.startingPort+i*portOffsetLength+portOffsetHTTP)
+		addresses[i] = fmt.Sprintf("127.0.0.1:%d", cr.startingPort+i*PortOffsetLength+PortOffsetHTTP)
 	}
 
-	adapter, err := NewAdapter(addresses, defaultScheme, defaultDatacenter)
+	return addresses
+}
+
+func (cr *clusterRunner) NewAdapter() Adapter {
+	adapter, err := NewAdapter(cr.addresses(), cr.scheme)
 	Ω(err).ShouldNot(HaveOccurred())
 
 	return adapter

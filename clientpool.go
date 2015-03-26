@@ -2,6 +2,7 @@ package consuladapter
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/consul/api"
 )
@@ -47,6 +48,33 @@ func (cp *clientPool) kvGet(key string) (*api.KVPair, error) {
 	}
 }
 
+func (cp *clientPool) kvKeysWithWait(prefix string, waitIndex uint64, waitDuration time.Duration) ([]string, uint64, error) {
+	var err error
+	queryOpts := &api.QueryOptions{
+		WaitIndex: waitIndex,
+		WaitTime:  waitDuration,
+	}
+
+	for _, client := range cp.clients {
+		keys, queryMeta, e := client.KV().Keys(prefix, "", queryOpts)
+
+		if e != nil {
+			err = e
+			continue
+		}
+
+		if keys != nil && queryMeta != nil {
+			return keys, queryMeta.LastIndex, nil
+		}
+	}
+
+	if err != nil {
+		return nil, 0, poolError(err)
+	} else {
+		return nil, 0, NewPrefixNotFoundError(prefix)
+	}
+}
+
 func (cp *clientPool) kvList(prefix string) (api.KVPairs, error) {
 	var err error
 
@@ -55,6 +83,9 @@ func (cp *clientPool) kvList(prefix string) (api.KVPairs, error) {
 		kvPairs, _, err = client.KV().List(prefix, nil)
 
 		if err == nil {
+			if kvPairs == nil {
+				return nil, NewPrefixNotFoundError(prefix)
+			}
 			return kvPairs, nil
 		}
 	}
@@ -119,13 +150,25 @@ func poolError(err error) error {
 }
 
 func NewKeyNotFoundError(key string) error {
-	return keyNotFoundError{key: key}
+	return KeyNotFoundError{key: key}
 }
 
-type keyNotFoundError struct {
+type KeyNotFoundError struct {
 	key string
 }
 
-func (e keyNotFoundError) Error() string {
+func (e KeyNotFoundError) Error() string {
 	return fmt.Sprintf("key not found: '%s'", e.key)
+}
+
+func NewPrefixNotFoundError(prefix string) error {
+	return PrefixNotFoundError{prefix: prefix}
+}
+
+type PrefixNotFoundError struct {
+	prefix string
+}
+
+func (e PrefixNotFoundError) Error() string {
+	return fmt.Sprintf("prefix not found: '%s'", e.prefix)
 }

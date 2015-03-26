@@ -14,12 +14,12 @@ const defaultProtocolVersion = 2
 
 const (
 	portOffsetDNS = iota
-	portOffsetHTTP
+	PortOffsetHTTP
 	portOffsetClientRPC
 	portOffsetSerfLAN
 	portOffsetSerfWAN
 	portOffsetServerRPC
-	portOffsetLength
+	PortOffsetLength
 )
 
 type configFile struct {
@@ -40,17 +40,16 @@ type configFile struct {
 }
 
 func newConfigFile(
-	datacenter string,
 	dataDir string,
 	nodeName string,
 	clusterStartingPort int,
 	index int,
 	numNodes int,
 ) configFile {
-	startingPort := clusterStartingPort + portOffsetLength*index
+	startingPort := clusterStartingPort + PortOffsetLength*index
 	ports := map[string]int{
 		"dns":      startingPort + portOffsetDNS,
-		"http":     startingPort + portOffsetHTTP,
+		"http":     startingPort + PortOffsetHTTP,
 		"rpc":      startingPort + portOffsetClientRPC,
 		"serf_lan": startingPort + portOffsetSerfLAN,
 		"serf_wan": startingPort + portOffsetSerfWAN,
@@ -59,12 +58,11 @@ func newConfigFile(
 
 	joinAddresses := make([]string, numNodes)
 	for i := 0; i < numNodes; i++ {
-		joinAddresses[i] = fmt.Sprintf("127.0.0.1:%d", clusterStartingPort+i*portOffsetLength+portOffsetSerfLAN)
+		joinAddresses[i] = fmt.Sprintf("127.0.0.1:%d", clusterStartingPort+i*PortOffsetLength+portOffsetSerfLAN)
 	}
 
 	return configFile{
 		BootstrapExpect:    numNodes,
-		Datacenter:         datacenter,
 		DataDir:            dataDir,
 		LogLevel:           defaultLogLevel,
 		NodeName:           nodeName,
@@ -82,7 +80,6 @@ func newConfigFile(
 
 func writeConfigFile(
 	configDir string,
-	datacenter string,
 	dataDir string,
 	nodeName string,
 	clusterStartingPort int,
@@ -93,7 +90,7 @@ func writeConfigFile(
 	file, err := os.Create(filePath)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	config := newConfigFile(datacenter, dataDir, nodeName, clusterStartingPort, index, numNodes)
+	config := newConfigFile(dataDir, nodeName, clusterStartingPort, index, numNodes)
 	configJSON, err := json.Marshal(config)
 	Ω(err).ShouldNot(HaveOccurred())
 
