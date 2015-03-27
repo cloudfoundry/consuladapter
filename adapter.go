@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloudfoundry-incubator/cf_http"
 	"github.com/hashicorp/consul/api"
 )
 
@@ -28,8 +29,9 @@ func NewAdapter(addresses []string, scheme string) (Adapter, error) {
 
 	for i, address := range addresses {
 		client, err := api.NewClient(&api.Config{
-			Address: address,
-			Scheme:  scheme,
+			Address:    address,
+			Scheme:     scheme,
+			HttpClient: cf_http.NewClient(),
 		})
 
 		if err != nil {
