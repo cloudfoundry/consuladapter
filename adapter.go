@@ -1,6 +1,7 @@
 package consuladapter
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -25,6 +26,14 @@ type Adapter interface {
 }
 
 func NewAdapter(addresses []string, scheme string) (Adapter, error) {
+	if len(scheme) == 0 {
+		return nil, errors.New("missing consul scheme")
+	}
+
+	if len(addresses) == 0 {
+		return nil, errors.New("missing consul addresses")
+	}
+
 	clients := make([]*api.Client, len(addresses))
 
 	for i, address := range addresses {
