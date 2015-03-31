@@ -13,6 +13,9 @@ var _ = Describe("Watching", func() {
 	var cancelChan chan<- struct{}
 	var errChan <-chan error
 
+	BeforeEach(startClusterAndAdapter)
+	AfterEach(stopCluster)
+
 	JustBeforeEach(func() {
 		disappearChan, cancelChan, errChan = adapter.WatchForDisappearancesUnder("under")
 	})

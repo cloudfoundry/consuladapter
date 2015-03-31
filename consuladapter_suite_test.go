@@ -16,7 +16,7 @@ func TestConsulAdapter(t *testing.T) {
 
 const clusterSize = 3
 
-var clusterRunner consuladapter.ClusterRunner
+var clusterRunner *consuladapter.ClusterRunner
 var adapter consuladapter.Adapter
 
 var _ = BeforeSuite(func() {
@@ -24,11 +24,11 @@ var _ = BeforeSuite(func() {
 	clusterRunner = consuladapter.NewClusterRunner(clusterStartingPort, clusterSize, "http")
 })
 
-var _ = AfterEach(func() {
+func stopCluster() {
 	clusterRunner.Stop()
-})
+}
 
-var _ = BeforeEach(func() {
+func startClusterAndAdapter() {
 	clusterRunner.Start()
 	adapter = clusterRunner.NewAdapter()
-})
+}

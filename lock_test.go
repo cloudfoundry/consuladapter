@@ -11,6 +11,9 @@ import (
 )
 
 var _ = Describe("Locking", func() {
+	BeforeEach(startClusterAndAdapter)
+	AfterEach(stopCluster)
+
 	lock := func(key string) {
 		Eventually(func() error {
 			_, err := adapter.AcquireAndMaintainLock(key, []byte("value"), structs.SessionTTLMin, nil)

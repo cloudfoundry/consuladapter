@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,15 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type ClusterRunner interface {
-	Start()
-	Stop()
-	NewAdapter() Adapter
-	Addresses() []string
-	Reset()
-}
-
-type clusterRunner struct {
+type ClusterRunner struct {
 	startingPort    int
 	numNodes        int
 	consulProcesses []ifrit.Process
@@ -38,12 +31,12 @@ type clusterRunner struct {
 const defaultDataDirPrefix = "consul_data"
 const defaultConfigDirPrefix = "consul_config"
 
-func NewClusterRunner(startingPort int, numNodes int, scheme string) *clusterRunner {
+func NewClusterRunner(startingPort int, numNodes int, scheme string) *ClusterRunner {
 	Ω(startingPort).Should(BeNumerically(">", 0))
 	Ω(startingPort).Should(BeNumerically("<", 1<<16))
 	Ω(numNodes).Should(BeNumerically(">", 0))
 
-	return &clusterRunner{
+	return &ClusterRunner{
 		startingPort: startingPort,
 		numNodes:     numNodes,
 		scheme:       scheme,
@@ -52,7 +45,7 @@ func NewClusterRunner(startingPort int, numNodes int, scheme string) *clusterRun
 	}
 }
 
-func (cr *clusterRunner) Start() {
+func (cr *ClusterRunner) Start() {
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
 
@@ -109,7 +102,7 @@ func (cr *clusterRunner) Start() {
 	cr.running = true
 }
 
-func (cr *clusterRunner) Stop() {
+func (cr *ClusterRunner) Stop() {
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
 
@@ -127,7 +120,16 @@ func (cr *clusterRunner) Stop() {
 	cr.running = false
 }
 
-func (cr *clusterRunner) Addresses() []string {
+func (cr *ClusterRunner) ConsulCluster() string {
+	urls := make([]string, cr.numNodes)
+	for i := 0; i < cr.numNodes; i++ {
+		urls[i] = fmt.Sprintf("%s://127.0.0.1:%d", cr.scheme, cr.startingPort+i*PortOffsetLength+PortOffsetHTTP)
+	}
+
+	return strings.Join(urls, ",")
+}
+
+func (cr *ClusterRunner) Addresses() []string {
 	addresses := make([]string, cr.numNodes)
 	for i := 0; i < cr.numNodes; i++ {
 		addresses[i] = fmt.Sprintf("127.0.0.1:%d", cr.startingPort+i*PortOffsetLength+PortOffsetHTTP)
@@ -136,14 +138,14 @@ func (cr *clusterRunner) Addresses() []string {
 	return addresses
 }
 
-func (cr *clusterRunner) NewAdapter() Adapter {
+func (cr *ClusterRunner) NewAdapter() Adapter {
 	adapter, err := NewAdapter(cr.Addresses(), cr.scheme)
 	Ω(err).ShouldNot(HaveOccurred())
 
 	return adapter
 }
 
-func (cr *clusterRunner) Reset() {
+func (cr *ClusterRunner) Reset() {
 	err := cr.NewAdapter().reset()
 	Ω(err).ShouldNot(HaveOccurred())
 }

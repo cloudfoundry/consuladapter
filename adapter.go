@@ -3,6 +3,8 @@ package consuladapter
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,6 +13,36 @@ import (
 )
 
 const defaultWatchBlockDuration = 10 * time.Second
+
+func Parse(urlArg string) (string, []string, error) {
+	urlStrings := strings.Split(urlArg, ",")
+	addresses := []string{}
+	scheme := ""
+
+	for _, urlString := range urlStrings {
+		u, err := url.Parse(urlString)
+		if err != nil {
+			return "", nil, err
+		}
+
+		if scheme == "" {
+			if u.Scheme != "http" && u.Scheme != "https" {
+				return "", nil, errors.New("scheme must be http or https")
+			}
+
+			scheme = u.Scheme
+		} else if scheme != u.Scheme {
+			return "", nil, errors.New("inconsistent schemes")
+		}
+
+		if u.Host == "" {
+			return "", nil, errors.New("missing address")
+		}
+		addresses = append(addresses, u.Host)
+	}
+
+	return scheme, addresses, nil
+}
 
 type Adapter interface {
 	AcquireAndMaintainLock(key string, value []byte, ttl time.Duration, cancelChan <-chan struct{}) (lost <-chan struct{}, err error)

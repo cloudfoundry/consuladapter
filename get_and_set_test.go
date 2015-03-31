@@ -8,6 +8,9 @@ import (
 )
 
 var _ = Describe("Setting and Getting Data", func() {
+	BeforeEach(startClusterAndAdapter)
+	AfterEach(stopCluster)
+
 	It("Creates data, reads individual key data, and lists data extending given prefixes", func() {
 		allChildren, err := adapter.ListPairsExtending("")
 		Ω(err).ShouldNot(HaveOccurred())
