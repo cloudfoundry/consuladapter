@@ -72,7 +72,7 @@ func NewAdapter(addresses []string, scheme string) (Adapter, error) {
 		client, err := api.NewClient(&api.Config{
 			Address:    address,
 			Scheme:     scheme,
-			HttpClient: cf_http.NewClient(),
+			HttpClient: cf_http.NewStreamingClient(),
 		})
 
 		if err != nil {
