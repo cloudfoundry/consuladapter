@@ -1,6 +1,7 @@
 package consuladapter
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloudfoundry-incubator/cf_http"
+	"github.com/hashicorp/consul/api"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 
@@ -94,10 +97,24 @@ func (cr *ClusterRunner) Start() {
 		Eventually(ready, 10, 0.05).Should(BeClosed(), "Expected consul to be up and running")
 	}
 
+	client, err := api.NewClient(&api.Config{
+		Address:    cr.Addresses()[0],
+		Scheme:     cr.scheme,
+		HttpClient: cf_http.NewStreamingClient(),
+	})
+	Ω(err).ShouldNot(HaveOccurred())
+	catalog := client.Catalog()
+
 	Eventually(func() error {
-		_, err := cr.NewAdapter().ListPairsExtending("")
-		return err
-	}, 5).Should(BeNil())
+		_, qm, err := catalog.Nodes(nil)
+		if err != nil {
+			return err
+		}
+		if qm.KnownLeader && qm.LastIndex > 0 {
+			return nil
+		}
+		return errors.New("not ready")
+	}, 5, 50*time.Millisecond).Should(BeNil())
 
 	cr.running = true
 }
