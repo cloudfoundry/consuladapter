@@ -157,7 +157,7 @@ func (cr *ClusterRunner) Addresses() []string {
 	return addresses
 }
 
-func (cr *ClusterRunner) NewAdapter() Adapter {
+func (cr *ClusterRunner) NewAdapter() *Adapter {
 	adapter, err := NewAdapter(cr.Addresses(), cr.scheme)
 	Ω(err).ShouldNot(HaveOccurred())
 

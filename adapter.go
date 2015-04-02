@@ -44,20 +44,7 @@ func Parse(urlArg string) (string, []string, error) {
 	return scheme, addresses, nil
 }
 
-type Adapter interface {
-	AcquireAndMaintainLock(key string, value []byte, ttl time.Duration, cancelChan <-chan struct{}) (lost <-chan struct{}, err error)
-	ReleaseAndDeleteLock(key string) error
-
-	GetValue(key string) ([]byte, error)
-	ListPairsExtending(prefix string) (map[string][]byte, error)
-	SetValue(key string, value []byte) error
-
-	WatchForDisappearancesUnder(prefix string) (disappearance <-chan []string, cancel chan<- struct{}, err <-chan error)
-
-	reset() error
-}
-
-func NewAdapter(addresses []string, scheme string) (Adapter, error) {
+func NewAdapter(addresses []string, scheme string) (*Adapter, error) {
 	if len(scheme) == 0 {
 		return nil, errors.New("missing consul scheme")
 	}
@@ -82,20 +69,20 @@ func NewAdapter(addresses []string, scheme string) (Adapter, error) {
 		clients[i] = client
 	}
 
-	return &adapter{
+	return &Adapter{
 		clientPool: &clientPool{clients: clients},
 		locks:      map[string]*api.Lock{},
 		lockLock:   &sync.Mutex{},
 	}, nil
 }
 
-type adapter struct {
+type Adapter struct {
 	*clientPool
 	locks    map[string]*api.Lock
 	lockLock *sync.Mutex
 }
 
-func (a *adapter) AcquireAndMaintainLock(key string, value []byte, ttl time.Duration, cancelChan <-chan struct{}) (<-chan struct{}, error) {
+func (a *Adapter) AcquireAndMaintainLock(key string, value []byte, ttl time.Duration, cancelChan <-chan struct{}) (<-chan struct{}, error) {
 	lock, err := a.clientPool.lockOpts(&api.LockOptions{
 		Key:        key,
 		Value:      value,
@@ -122,7 +109,7 @@ func (a *adapter) AcquireAndMaintainLock(key string, value []byte, ttl time.Dura
 	return lostLockChan, nil
 }
 
-func (a *adapter) ReleaseAndDeleteLock(key string) error {
+func (a *Adapter) ReleaseAndDeleteLock(key string) error {
 	a.lockLock.Lock()
 	defer a.lockLock.Unlock()
 
@@ -142,7 +129,7 @@ func (a *adapter) ReleaseAndDeleteLock(key string) error {
 	return nil
 }
 
-func (a *adapter) GetValue(key string) ([]byte, error) {
+func (a *Adapter) GetValue(key string) ([]byte, error) {
 	kvPair, err := a.clientPool.kvGet(key)
 	if err != nil {
 		return nil, err
@@ -151,7 +138,7 @@ func (a *adapter) GetValue(key string) ([]byte, error) {
 	return kvPair.Value, nil
 }
 
-func (a *adapter) ListPairsExtending(prefix string) (map[string][]byte, error) {
+func (a *Adapter) ListPairsExtending(prefix string) (map[string][]byte, error) {
 	kvPairs, err := a.clientPool.kvList(prefix)
 	if err != nil {
 		return nil, err
@@ -164,11 +151,11 @@ func (a *adapter) ListPairsExtending(prefix string) (map[string][]byte, error) {
 	return children, nil
 }
 
-func (a *adapter) SetValue(key string, value []byte) error {
+func (a *Adapter) SetValue(key string, value []byte) error {
 	return a.clientPool.kvPut(key, value)
 }
 
-func (a *adapter) WatchForDisappearancesUnder(prefix string) (<-chan []string, chan<- struct{}, <-chan error) {
+func (a *Adapter) WatchForDisappearancesUnder(prefix string) (<-chan []string, chan<- struct{}, <-chan error) {
 	disappearanceChan := make(chan []string)
 	cancelChan := make(chan struct{})
 	errorChan := make(chan error, 1)
@@ -208,7 +195,7 @@ func (a *adapter) WatchForDisappearancesUnder(prefix string) (<-chan []string, c
 	return disappearanceChan, cancelChan, errorChan
 }
 
-func (a *adapter) reset() error {
+func (a *Adapter) reset() error {
 	err := a.clientPool.kvDeleteTree("")
 	err2 := a.clientPool.sessionDestroyAll()
 	if err != nil {

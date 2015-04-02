@@ -17,7 +17,7 @@ func TestConsulAdapter(t *testing.T) {
 const clusterSize = 3
 
 var clusterRunner *consuladapter.ClusterRunner
-var adapter consuladapter.Adapter
+var adapter *consuladapter.Adapter
 
 var _ = BeforeSuite(func() {
 	clusterStartingPort := 5001 + config.GinkgoConfig.ParallelNode*consuladapter.PortOffsetLength*clusterSize
