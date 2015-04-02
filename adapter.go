@@ -210,11 +210,12 @@ func (a *adapter) WatchForDisappearancesUnder(prefix string) (<-chan []string, c
 
 func (a *adapter) reset() error {
 	err := a.clientPool.kvDeleteTree("")
+	err2 := a.clientPool.sessionDestroyAll()
 	if err != nil {
 		return err
 	}
 
-	return a.clientPool.sessionDestroyAll()
+	return err2
 }
 
 func newKeySetFromStrings(keyStrings []string) keySet {

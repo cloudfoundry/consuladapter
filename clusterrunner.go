@@ -97,6 +97,10 @@ func (cr *ClusterRunner) Start() {
 		Eventually(ready, 10, 0.05).Should(BeClosed(), "Expected consul to be up and running")
 	}
 
+	cr.running = true
+}
+
+func (cr *ClusterRunner) WaitUntilReady() {
 	client, err := api.NewClient(&api.Config{
 		Address:    cr.Addresses()[0],
 		Scheme:     cr.scheme,
@@ -115,8 +119,6 @@ func (cr *ClusterRunner) Start() {
 		}
 		return errors.New("not ready")
 	}, 5, 50*time.Millisecond).Should(BeNil())
-
-	cr.running = true
 }
 
 func (cr *ClusterRunner) Stop() {

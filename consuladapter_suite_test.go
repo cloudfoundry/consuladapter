@@ -31,4 +31,5 @@ func stopCluster() {
 func startClusterAndAdapter() {
 	clusterRunner.Start()
 	adapter = clusterRunner.NewAdapter()
+	clusterRunner.WaitUntilReady()
 }
