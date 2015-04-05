@@ -135,6 +135,10 @@ func (a *Adapter) GetValue(key string) ([]byte, error) {
 		return nil, err
 	}
 
+	if kvPair.Session == "" {
+		return nil, NewKeyNotFoundError(key)
+	}
+
 	return kvPair.Value, nil
 }
 
@@ -146,13 +150,12 @@ func (a *Adapter) ListPairsExtending(prefix string) (map[string][]byte, error) {
 
 	children := map[string][]byte{}
 	for _, kvPair := range kvPairs {
-		children[kvPair.Key] = kvPair.Value
+		if kvPair.Session != "" {
+			children[kvPair.Key] = kvPair.Value
+		}
 	}
-	return children, nil
-}
 
-func (a *Adapter) SetValue(key string, value []byte) error {
-	return a.clientPool.kvPut(key, value)
+	return children, nil
 }
 
 func (a *Adapter) WatchForDisappearancesUnder(prefix string) (<-chan []string, chan<- struct{}, <-chan error) {

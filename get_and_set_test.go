@@ -1,7 +1,9 @@
 package consuladapter_test
 
 import (
+	"github.com/cloudfoundry-incubator/cf_http"
 	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/hashicorp/consul/api"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,49 +13,79 @@ var _ = Describe("Setting and Getting Data", func() {
 	BeforeEach(startClusterAndAdapter)
 	AfterEach(stopCluster)
 
-	It("Creates data, reads individual key data, and lists data extending given prefixes", func() {
-		allChildren, err := adapter.ListPairsExtending("")
-		Ω(err).ShouldNot(HaveOccurred())
-		Ω(allChildren).Should(HaveLen(0))
-
-		err = adapter.SetValue("key", []byte("value"))
-		Ω(err).ShouldNot(HaveOccurred())
-
-		err = adapter.SetValue("nested", []byte("directory-metadata"))
-		Ω(err).ShouldNot(HaveOccurred())
-
-		err = adapter.SetValue("nested/key", []byte("nested-value"))
-		Ω(err).ShouldNot(HaveOccurred())
-
-		topKeyValue, err := adapter.GetValue("key")
-		Ω(err).ShouldNot(HaveOccurred())
-		Ω(topKeyValue).Should(Equal([]byte("value")))
-
-		directoryValue, err := adapter.GetValue("nested")
-		Ω(err).ShouldNot(HaveOccurred())
-		Ω(directoryValue).Should(Equal([]byte("directory-metadata")))
-
-		nestedKeyValue, err := adapter.GetValue("nested/key")
-		Ω(err).ShouldNot(HaveOccurred())
-		Ω(nestedKeyValue).Should(Equal([]byte("nested-value")))
-
-		allChildren, err = adapter.ListPairsExtending("")
-		Ω(err).ShouldNot(HaveOccurred())
-		Ω(allChildren).Should(Equal(map[string][]byte{
-			"key":        []byte("value"),
-			"nested":     []byte("directory-metadata"),
-			"nested/key": []byte("nested-value"),
-		}))
-
-		nestedChildren, err := adapter.ListPairsExtending("nested/")
-		Ω(err).ShouldNot(HaveOccurred())
-		Ω(nestedChildren).Should(Equal(map[string][]byte{
-			"nested/key": []byte("nested-value"),
-		}))
-	})
-
 	It("Returns a KeyNotFound error when getting a non-existent key", func() {
 		_, err := adapter.GetValue("not-present")
 		Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError("not-present")))
+	})
+
+	Describe("Retrieving KVs and Locks", func() {
+		var client *api.Client
+		var lock *api.Lock
+
+		BeforeEach(func() {
+			var err error
+			client, err = api.NewClient(&api.Config{
+				Address:    clusterRunner.Addresses()[0],
+				Scheme:     "http",
+				HttpClient: cf_http.NewStreamingClient(),
+			})
+			Ω(err).ShouldNot(HaveOccurred())
+
+			lock, err = client.LockKey("a/b")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			stopCh := make(chan struct{})
+			_, err = lock.Lock(stopCh)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("retrieves acquired values", func() {
+			bytes, err := adapter.GetValue("a/b")
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(bytes).Should(BeZero())
+		})
+
+		It("returns all acquired/locked values", func() {
+			allChildren, err := adapter.ListPairsExtending("a/")
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(allChildren).Should(HaveLen(1))
+			Ω(allChildren).Should(HaveKey("a/b"))
+		})
+
+		Context("when unlocked", func() {
+			BeforeEach(func() {
+				err := lock.Unlock()
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("retrieves nothing", func() {
+				_, err := adapter.GetValue("a/b")
+				Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError("a/b")))
+			})
+
+			It("returns nothing", func() {
+				allChildren, err := adapter.ListPairsExtending("a/")
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(allChildren).Should(HaveLen(0))
+			})
+
+			Context("when destroyed", func() {
+				BeforeEach(func() {
+					err := lock.Destroy()
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("retrieves nothing", func() {
+					_, err := adapter.GetValue("a/b")
+					Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError("a/b")))
+				})
+
+				It("returns nothing", func() {
+					allChildren, err := adapter.ListPairsExtending("a/")
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(allChildren).Should(HaveLen(0))
+				})
+			})
+		})
 	})
 })
