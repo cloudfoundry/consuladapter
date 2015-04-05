@@ -14,7 +14,7 @@ func TestConsulAdapter(t *testing.T) {
 	RunSpecs(t, "Adapter <-> Cluster-Runner Integration Suite")
 }
 
-const clusterSize = 3
+const clusterSize = 1
 
 var clusterRunner *consuladapter.ClusterRunner
 var adapter *consuladapter.Adapter

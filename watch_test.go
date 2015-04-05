@@ -1,14 +1,19 @@
 package consuladapter_test
 
 import (
-	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/cloudfoundry-incubator/cf_http"
+	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/consul/structs"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"time"
 )
 
 var _ = Describe("Watching", func() {
+	var client *api.Client
+
 	var disappearChan <-chan []string
 	var cancelChan chan<- struct{}
 	var errChan <-chan error
@@ -16,21 +21,27 @@ var _ = Describe("Watching", func() {
 	BeforeEach(startClusterAndAdapter)
 	AfterEach(stopCluster)
 
-	JustBeforeEach(func() {
+	BeforeEach(func() {
+		var err error
+		client, err = api.NewClient(&api.Config{
+			Address:    clusterRunner.Addresses()[0],
+			Scheme:     "http",
+			HttpClient: cf_http.NewStreamingClient(),
+		})
+		Ω(err).ShouldNot(HaveOccurred())
+
 		disappearChan, cancelChan, errChan = adapter.WatchForDisappearancesUnder("under")
 	})
 
 	Context("when there are keys", func() {
 		BeforeEach(func() {
 			Eventually(func() error {
-				_, err := adapter.AcquireAndMaintainLock("under/here", []byte("value"), structs.SessionTTLMin, nil)
+				_, _, err := client.KV().Get("under", nil)
 				return err
-			}).ShouldNot(HaveOccurred())
+			}, 1, 50*time.Millisecond).ShouldNot(HaveOccurred())
 
-			Eventually(func() []byte {
-				v, _ := adapter.GetValue("under/here")
-				return v
-			}).ShouldNot(BeNil())
+			_, err := adapter.AcquireAndMaintainLock("under/here", []byte("value"), structs.SessionTTLMin, nil)
+			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -65,17 +76,54 @@ var _ = Describe("Watching", func() {
 		})
 
 		Context("when an error occurs", func() {
-
 			It("reports an error", func() {
 				clusterRunner.Stop()
 				Eventually(errChan).Should(Receive())
+				Eventually(errChan).Should(BeClosed())
+				Eventually(disappearChan).Should(BeClosed())
+			})
+		})
+	})
+
+	Context("when a lock is locked", func() {
+		var lock *api.Lock
+
+		BeforeEach(func() {
+			var err error
+			lock, err = client.LockOpts(&api.LockOptions{
+				Key:   "under/there",
+				Value: []byte("there"),
+			})
+			Ω(err).ShouldNot(HaveOccurred())
+
+			stopCh := make(chan struct{})
+			_, err = lock.Lock(stopCh)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			v, err := adapter.GetValue("under/there")
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(v).ShouldNot(BeNil())
+		})
+
+		It("does not notice", func() {
+			Consistently(disappearChan).ShouldNot(Receive())
+		})
+
+		Context("when its unlocked", func() {
+			BeforeEach(func() {
+				err := lock.Unlock()
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			It("detects the disappearance", func() {
+				Eventually(disappearChan).Should(Receive(Equal([]string{"under/there"})))
 			})
 		})
 	})
 
 	Context("when there are no keys", func() {
-		It("will receive PrefixNotFound error", func() {
-			Eventually(errChan).Should(Receive(Equal(consuladapter.NewPrefixNotFoundError("under"))))
+		It("will not receive PrefixNotFound error", func() {
+			Consistently(errChan).ShouldNot(Receive())
 		})
 	})
 })

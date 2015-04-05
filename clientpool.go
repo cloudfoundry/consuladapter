@@ -48,7 +48,7 @@ func (cp *clientPool) kvGet(key string) (*api.KVPair, error) {
 	}
 }
 
-func (cp *clientPool) kvKeysWithWait(prefix string, waitIndex uint64, waitDuration time.Duration) ([]string, uint64, error) {
+func (cp *clientPool) kvListWithWait(prefix string, waitIndex uint64, waitDuration time.Duration) (api.KVPairs, uint64, error) {
 	var err error
 	queryOpts := &api.QueryOptions{
 		WaitIndex: waitIndex,
@@ -56,15 +56,14 @@ func (cp *clientPool) kvKeysWithWait(prefix string, waitIndex uint64, waitDurati
 	}
 
 	for _, client := range cp.clients {
-		keys, queryMeta, e := client.KV().Keys(prefix, "", queryOpts)
-
+		pairs, queryMeta, e := client.KV().List(prefix, queryOpts)
 		if e != nil {
 			err = e
 			continue
 		}
 
-		if keys != nil && queryMeta != nil {
-			return keys, queryMeta.LastIndex, nil
+		if pairs != nil && queryMeta != nil {
+			return pairs, queryMeta.LastIndex, nil
 		}
 	}
 

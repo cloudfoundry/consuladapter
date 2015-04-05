@@ -14,6 +14,8 @@ import (
 
 const defaultWatchBlockDuration = 10 * time.Second
 
+var emptyBytes = []byte{}
+
 func Parse(urlArg string) (string, []string, error) {
 	urlStrings := strings.Split(urlArg, ",")
 	addresses := []string{}
@@ -165,34 +167,56 @@ func (a *Adapter) WatchForDisappearancesUnder(prefix string) (<-chan []string, c
 
 	prefixNotFound := NewPrefixNotFoundError(prefix)
 	go func() {
-		defer close(disappearanceChan)
-		defer close(errorChan)
+		var mutex sync.Mutex
+		consulErr := make(chan error, 1)
+		done := false
 
-		keys := keySet{}
-		var index uint64 = 0
+		go func() {
+			keys := keySet{}
+			var index uint64 = 0
 
-		for {
-			select {
-			case <-cancelChan:
-				return
-			default:
-				newKeyStrings, newIndex, err := a.clientPool.kvKeysWithWait(prefix, index, defaultWatchBlockDuration)
+			for {
+				newPairs, newIndex, err := a.clientPool.kvListWithWait(prefix, index, defaultWatchBlockDuration)
+				if err == prefixNotFound {
+					err = a.kvPut(prefix, emptyBytes)
+				}
+
+				mutex.Lock()
+				if done {
+					mutex.Unlock()
+					return
+				}
+
 				if err != nil {
 					if err != prefixNotFound || len(keys) == 0 {
-						errorChan <- err
+						consulErr <- err
+						mutex.Unlock()
 						return
 					}
 				}
 
-				newKeys := newKeySetFromStrings(newKeyStrings)
+				newKeys := newKeySet(newPairs)
 				if missing := difference(keys, newKeys); len(missing) > 0 {
 					disappearanceChan <- missing
 				}
+				mutex.Unlock()
 
 				keys = newKeys
 				index = newIndex
 			}
+		}()
+
+		select {
+		case <-cancelChan:
+		case err := <-consulErr:
+			errorChan <- err
 		}
+
+		mutex.Lock()
+		done = true
+		close(disappearanceChan)
+		close(errorChan)
+		mutex.Unlock()
 	}()
 
 	return disappearanceChan, cancelChan, errorChan
@@ -208,10 +232,12 @@ func (a *Adapter) reset() error {
 	return err2
 }
 
-func newKeySetFromStrings(keyStrings []string) keySet {
+func newKeySet(keyPairs api.KVPairs) keySet {
 	newKeySet := keySet{}
-	for _, key := range keyStrings {
-		newKeySet[key] = struct{}{}
+	for _, kvPair := range keyPairs {
+		if kvPair.Session != "" {
+			newKeySet[kvPair.Key] = struct{}{}
+		}
 	}
 	return newKeySet
 }
