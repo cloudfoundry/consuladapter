@@ -118,7 +118,7 @@ func (cr *ClusterRunner) WaitUntilReady() {
 			return nil
 		}
 		return errors.New("not ready")
-	}, 5, 50*time.Millisecond).Should(BeNil())
+	}, 10, 100*time.Millisecond).Should(BeNil())
 }
 
 func (cr *ClusterRunner) Stop() {
