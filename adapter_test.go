@@ -24,18 +24,11 @@ var _ = Describe("Adapter", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 
-		It("errors when passed mismatched schemes", func() {
-			_, _, err := consuladapter.Parse("http://1.2.3.4:5678,https://6.7.8.9:9876")
-			Ω(err).Should(HaveOccurred())
-		})
-
-		It("returns the scheme and set of addresses", func() {
-			scheme, addresses, err := consuladapter.Parse("https://1.2.3.4:5678,https://6.7.8.9:9876")
+		It("returns the scheme and address", func() {
+			scheme, address, err := consuladapter.Parse("https://1.2.3.4:5678")
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(scheme).Should(Equal("https"))
-			Ω(addresses).Should(ConsistOf("1.2.3.4:5678", "6.7.8.9:9876"))
+			Ω(address).Should(Equal("1.2.3.4:5678"))
 		})
-
 	})
-
 })

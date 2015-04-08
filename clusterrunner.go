@@ -100,13 +100,18 @@ func (cr *ClusterRunner) Start() {
 	cr.running = true
 }
 
-func (cr *ClusterRunner) WaitUntilReady() {
+func (cr *ClusterRunner) NewClient() *api.Client {
 	client, err := api.NewClient(&api.Config{
-		Address:    cr.Addresses()[0],
+		Address:    cr.Address(),
 		Scheme:     cr.scheme,
 		HttpClient: cf_http.NewStreamingClient(),
 	})
 	Ω(err).ShouldNot(HaveOccurred())
+	return client
+}
+
+func (cr *ClusterRunner) WaitUntilReady() {
+	client := cr.NewClient()
 	catalog := client.Catalog()
 
 	Eventually(func() error {
@@ -130,7 +135,7 @@ func (cr *ClusterRunner) Stop() {
 	}
 
 	for i := 0; i < cr.numNodes; i++ {
-		ginkgomon.Kill(cr.consulProcesses[i], 5*time.Second)
+		ginkgomon.Interrupt(cr.consulProcesses[i], 5*time.Second)
 	}
 
 	os.RemoveAll(cr.dataDir)
@@ -148,23 +153,40 @@ func (cr *ClusterRunner) ConsulCluster() string {
 	return strings.Join(urls, ",")
 }
 
-func (cr *ClusterRunner) Addresses() []string {
-	addresses := make([]string, cr.numNodes)
-	for i := 0; i < cr.numNodes; i++ {
-		addresses[i] = fmt.Sprintf("127.0.0.1:%d", cr.startingPort+i*PortOffsetLength+PortOffsetHTTP)
-	}
-
-	return addresses
+func (cr *ClusterRunner) Address() string {
+	return fmt.Sprintf("127.0.0.1:%d", cr.startingPort+PortOffsetHTTP)
 }
 
-func (cr *ClusterRunner) NewAdapter() *Adapter {
-	adapter, err := NewAdapter(cr.Addresses(), cr.scheme)
+func (cr *ClusterRunner) URL() string {
+	return fmt.Sprintf("%s://%s", cr.scheme, cr.Address())
+}
+
+func (cr *ClusterRunner) NewSession(sessionName string) *Session {
+	client := cr.NewClient()
+	adapter, err := NewSession(sessionName, 10*time.Second, client, NewSessionManager(client))
 	Ω(err).ShouldNot(HaveOccurred())
 
 	return adapter
 }
 
-func (cr *ClusterRunner) Reset() {
-	err := cr.NewAdapter().reset()
-	Ω(err).ShouldNot(HaveOccurred())
+func (cr *ClusterRunner) Reset() error {
+	client := cr.NewClient()
+
+	sessions, _, err := client.Session().List(nil)
+	if err == nil {
+		for _, session := range sessions {
+			_, err1 := client.Session().Destroy(session.ID, nil)
+			if err1 != nil {
+				err = err1
+			}
+		}
+	}
+
+	_, err1 := client.KV().DeleteTree("", nil)
+
+	if err != nil {
+		return err
+	}
+
+	return err1
 }
