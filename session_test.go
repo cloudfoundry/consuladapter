@@ -59,7 +59,7 @@ var _ = Describe("Session", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 
-			It("renews the current session if present", func() {
+			It("destroys the current session if present", func() {
 				_, err := session.Recreate()
 				Ω(err).ShouldNot(HaveOccurred())
 
@@ -67,7 +67,7 @@ var _ = Describe("Session", func() {
 					entries, _, err := client.Session().List(nil)
 					Ω(err).ShouldNot(HaveOccurred())
 					return findSession(session.ID(), entries)
-				}).ShouldNot(BeNil())
+				}).Should(BeNil())
 			})
 
 			It("creates a new session if not present", func() {

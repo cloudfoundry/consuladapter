@@ -69,6 +69,7 @@ func (s *Session) Destroy() {
 	s.lock.Unlock()
 }
 
+// Lock must be held
 func (s *Session) destroy() {
 	if s.destroyed == false {
 		close(s.doneCh)
@@ -81,7 +82,8 @@ func (s *Session) destroy() {
 	}
 }
 
-func (s *Session) createOrRenewSession() error {
+// Lock must be held
+func (s *Session) createSession() error {
 	if s.destroyed {
 		return ErrDestroyed
 	}
@@ -97,7 +99,7 @@ func (s *Session) createOrRenewSession() error {
 		LockDelay: 1 * time.Nanosecond,
 	}
 
-	id, renewTTL, err := renewOrCreate(se, s.sessionMgr)
+	id, renewTTL, err := create(se, s.sessionMgr)
 	if err != nil {
 		return err
 	}
@@ -127,13 +129,9 @@ func (s *Session) Recreate() (*Session, error) {
 		return nil, err
 	}
 
-	err = session.createOrRenewSession()
+	err = session.createSession()
 	if err != nil {
 		return nil, err
-	}
-
-	if s.id != session.id {
-		s.destroy()
 	}
 
 	return session, err
@@ -141,7 +139,7 @@ func (s *Session) Recreate() (*Session, error) {
 
 func (s *Session) AcquireLock(key string, value []byte) error {
 	s.lock.Lock()
-	err := s.createOrRenewSession()
+	err := s.createSession()
 	s.lock.Unlock()
 	if err != nil {
 		return err
@@ -171,7 +169,7 @@ func (s *Session) AcquireLock(key string, value []byte) error {
 
 func (s *Session) SetPresence(key string, value []byte) (<-chan string, error) {
 	s.lock.Lock()
-	err := s.createOrRenewSession()
+	err := s.createSession()
 	s.lock.Unlock()
 	if err != nil {
 		return nil, err
@@ -199,7 +197,7 @@ func (s *Session) SetPresence(key string, value []byte) (<-chan string, error) {
 	return presenceLost, nil
 }
 
-func renewOrCreate(se *api.SessionEntry, sessionMgr SessionManager) (string, string, error) {
+func create(se *api.SessionEntry, sessionMgr SessionManager) (string, string, error) {
 	nodeName, err := sessionMgr.NodeName()
 	if err != nil {
 		return "", "", err
@@ -210,35 +208,33 @@ func renewOrCreate(se *api.SessionEntry, sessionMgr SessionManager) (string, str
 		return "", "", err
 	}
 
-	id := ""
-	ttl := se.TTL
-	session := findSession(se.Name, nodeSessions)
-	if session != nil {
-		session, _, err = sessionMgr.Renew(session.ID, nil)
-		if err == nil && session != nil {
-			id = session.ID
-			ttl = session.TTL
+	sessions := findSessions(se.Name, nodeSessions)
+	if sessions != nil {
+		for _, s := range sessions {
+			_, err = sessionMgr.Destroy(s.ID, nil)
+			if err != nil {
+				return "", "", err
+			}
 		}
 	}
 
-	if id == "" {
-		id, _, err = sessionMgr.Create(se, nil)
-		if err != nil {
-			return "", "", err
-		}
+	id, _, err := sessionMgr.Create(se, nil)
+	if err != nil {
+		return "", "", err
 	}
 
-	return id, ttl, nil
+	return id, se.TTL, nil
 }
 
-func findSession(name string, sessions []*api.SessionEntry) *api.SessionEntry {
+func findSessions(name string, sessions []*api.SessionEntry) []*api.SessionEntry {
+	var matches []*api.SessionEntry
 	for _, session := range sessions {
 		if session.Name == name {
-			return session
+			matches = append(matches, session)
 		}
 	}
 
-	return nil
+	return matches
 }
 
 func convertError(err error) error {

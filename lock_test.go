@@ -116,6 +116,33 @@ var _ = Describe("Locks and Presence", func() {
 				Eventually(session.Err()).Should(Receive(Equal(consuladapter.LostLockError(lockKey))))
 			})
 
+			Context("when recreating the Session", func() {
+				var newSession *consuladapter.Session
+
+				JustBeforeEach(func() {
+					var err error
+					newSession, err = session.Recreate()
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					newSession.Destroy()
+				})
+
+				It("creates a new session", func() {
+					Ω(newSession.ID()).ShouldNot(Equal(session.ID()))
+				})
+
+				It("can contend for the Lock", func() {
+					errCh := make(chan error, 1)
+					go func() {
+						errCh <- newSession.AcquireLock(lockKey, lockValue)
+					}()
+
+					Eventually(errCh).Should(Receive(BeNil()))
+				})
+			})
+
 			Context("with another session", func() {
 				It("acquires the lock when released", func() {
 					bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
