@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/cloudfoundry-incubator/consuladapter/fakes"
+	"github.com/hashicorp/consul/api"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
@@ -44,4 +46,17 @@ func startClusterAndSession() {
 func startCluster() {
 	clusterRunner.Start()
 	clusterRunner.WaitUntilReady()
+}
+
+func newFakeSessionManager(client *api.Client) *fakes.FakeSessionManager {
+	sessionMgr := &fakes.FakeSessionManager{}
+	realSM := consuladapter.NewSessionManager(client)
+	sessionMgr.NodeNameStub = realSM.NodeName
+	sessionMgr.NodeStub = realSM.Node
+	sessionMgr.CreateStub = realSM.Create
+	sessionMgr.DestroyStub = realSM.Destroy
+	sessionMgr.RenewStub = realSM.Renew
+	sessionMgr.RenewPeriodicStub = realSM.RenewPeriodic
+	sessionMgr.NewLockStub = realSM.NewLock
+	return sessionMgr
 }

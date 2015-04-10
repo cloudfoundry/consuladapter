@@ -12,7 +12,7 @@ type FakeSessionManager struct {
 	NodeNameStub        func() (string, error)
 	nodeNameMutex       sync.RWMutex
 	nodeNameArgsForCall []struct{}
-	nodeNameReturns struct {
+	nodeNameReturns     struct {
 		result1 string
 		result2 error
 	}

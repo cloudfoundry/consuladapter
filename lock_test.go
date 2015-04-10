@@ -2,9 +2,12 @@ package consuladapter_test
 
 import (
 	"errors"
+	"net"
+	"net/url"
 	"time"
 
 	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/cloudfoundry-incubator/consuladapter/fakes"
 	"github.com/hashicorp/consul/api"
 
 	. "github.com/onsi/ginkgo"
@@ -13,15 +16,76 @@ import (
 
 var _ = Describe("Locks and Presence", func() {
 	var client *api.Client
-	var sessionMgr consuladapter.SessionManager
+	var sessionMgr *fakes.FakeSessionManager
+	var sessionErr error
 
 	BeforeEach(func() {
-		startClusterAndSession()
+		startCluster()
 		client = clusterRunner.NewClient()
-		sessionMgr = consuladapter.NewSessionManager(client)
+		sessionMgr = newFakeSessionManager(client)
 	})
 
 	AfterEach(stopClusterAndSession)
+
+	JustBeforeEach(func() {
+		session, sessionErr = consuladapter.NewSession("a-session", 20*time.Second, client, sessionMgr)
+	})
+
+	AfterEach(func() {
+		if session != nil {
+			session.Destroy()
+		}
+	})
+
+	sessionCreationTests := func(operationErr func() error) {
+
+		It("is set with the expected defaults", func() {
+			entries, _, err := client.Session().List(nil)
+			Ω(err).ShouldNot(HaveOccurred())
+			entry := findSession(session.ID(), entries)
+			Ω(entry).ShouldNot(BeNil())
+			Ω(entry.Name).Should(Equal("a-session"))
+			Ω(entry.ID).Should(Equal(session.ID()))
+			Ω(entry.Behavior).Should(Equal(api.SessionBehaviorDelete))
+			Ω(entry.TTL).Should(Equal("20s"))
+			Ω(entry.LockDelay).Should(BeZero())
+		})
+
+		It("renews the session periodically", func() {
+			Eventually(sessionMgr.RenewPeriodicCallCount).ShouldNot(Equal(0))
+		})
+
+		Context("when NodeName() fails", func() {
+			BeforeEach(func() {
+				sessionMgr.NodeNameReturns("", errors.New("nodename failed"))
+			})
+
+			It("returns an error", func() {
+				Ω(operationErr().Error()).Should(Equal("nodename failed"))
+			})
+		})
+
+		Context("when retrieving the node sessions fail", func() {
+			BeforeEach(func() {
+				sessionMgr.NodeReturns(nil, nil, errors.New("session list failed"))
+			})
+
+			It("returns an error", func() {
+				Ω(operationErr().Error()).Should(Equal("session list failed"))
+			})
+		})
+
+		Context("when Create fails", func() {
+			BeforeEach(func() {
+				sessionMgr.CreateReturns("", nil, errors.New("create failed"))
+			})
+
+			It("returns an error", func() {
+				Ω(operationErr()).Should(HaveOccurred())
+				Ω(operationErr().Error()).Should(Equal("create failed"))
+			})
+		})
+	}
 
 	Describe("Session#AcquireLock", func() {
 		const lockKey = "lockme"
@@ -29,10 +93,11 @@ var _ = Describe("Locks and Presence", func() {
 		var lockErr error
 
 		Context("when the store is up", func() {
-
 			JustBeforeEach(func() {
 				lockErr = session.AcquireLock(lockKey, lockValue)
 			})
+
+			sessionCreationTests(func() error { return lockErr })
 
 			It("creates acquired key/value", func() {
 				Ω(lockErr).ShouldNot(HaveOccurred())
@@ -80,31 +145,40 @@ var _ = Describe("Locks and Presence", func() {
 				It("loses the lock", func() {
 					Eventually(session.Err()).Should(Receive(Equal(consuladapter.LostLockError(lockKey))))
 				})
+
+				Context("when acquiring a lock", func() {
+					It("fails", func() {
+						bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
+						Ω(err).ShouldNot(HaveOccurred())
+
+						err = bsession.AcquireLock(lockKey, lockValue)
+						Ω(err).Should(HaveOccurred())
+					})
+				})
 			})
-		})
 
-		Context("when the store is down", func() {
-			Context("acquiring a lock", func() {
-				It("fails", func() {
-					bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
-					Ω(err).ShouldNot(HaveOccurred())
-					defer bsession.Destroy()
+			Context("and consul goes down during a renew", func() {
+				BeforeEach(func() {
+					oldStub := sessionMgr.RenewPeriodicStub
+					sessionMgr.RenewPeriodicStub = func(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error {
+						stopCluster()
+						return oldStub("1s", id, q, doneCh)
+					}
+				})
 
-					errChan := make(chan error, 1)
-					go func() {
-						defer GinkgoRecover()
-						errChan <- bsession.AcquireLock(lockKey, lockValue)
-					}()
+				It("reports an error", func() {
+					var err error
+					Eventually(session.Err()).Should(Receive(&err))
 
-					stopCluster()
-					Eventually(func() error {
-						select {
-						case err := <-bsession.Err():
-							return err
-						case err := <-errChan:
-							return err
-						}
-					}).ShouldNot(BeNil())
+					// a race between 2 possibilities
+					if urlErr, ok := err.(*url.Error); ok {
+						Ω(ok).Should(BeTrue())
+						opErr, ok := urlErr.Err.(*net.OpError)
+						Ω(ok).Should(BeTrue())
+						Ω(opErr.Op).Should(Equal("dial"))
+					} else {
+						Ω(err).Should(Equal(consuladapter.LostLockError(lockKey)))
+					}
 				})
 			})
 		})
@@ -119,6 +193,8 @@ var _ = Describe("Locks and Presence", func() {
 		JustBeforeEach(func() {
 			presenceLost, presenceErr = session.SetPresence(presenceKey, presenceValue)
 		})
+
+		sessionCreationTests(func() error { return presenceErr })
 
 		It("creates an acquired key/value", func() {
 			Ω(presenceErr).ShouldNot(HaveOccurred())
@@ -162,36 +238,41 @@ var _ = Describe("Locks and Presence", func() {
 			})
 		})
 
-		Context("and the store goes down", func() {
+		Context("and consul goes down", func() {
 			JustBeforeEach(stopCluster)
 
 			It("loses its presence", func() {
 				Eventually(presenceLost).Should(Receive(Equal(presenceKey)))
 			})
-		})
 
-		Context("when the store is down", func() {
-			Context("acquiring a lock", func() {
+			Context("when setting presence", func() {
 				It("fails", func() {
 					bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
 					Ω(err).ShouldNot(HaveOccurred())
-					defer bsession.Destroy()
 
-					errChan := make(chan error, 1)
-					go func() {
-						defer GinkgoRecover()
-						lostPresence, err := bsession.SetPresence(presenceKey, presenceValue)
-						if err == nil {
-							Eventually(lostPresence).Should(Receive(Equal(presenceKey)))
-							err = errors.New("lost presence")
-						}
-						errChan <- err
-					}()
-
-					stopCluster()
-
-					Eventually(errChan).Should(Receive(HaveOccurred()))
+					_, err = bsession.SetPresence(presenceKey, presenceValue)
+					Ω(err).Should(HaveOccurred())
 				})
+			})
+		})
+
+		Context("and consul goes down during a renew", func() {
+			BeforeEach(func() {
+				oldStub := sessionMgr.RenewPeriodicStub
+				sessionMgr.RenewPeriodicStub = func(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error {
+					stopCluster()
+					return oldStub("1s", id, q, doneCh)
+				}
+			})
+
+			It("reports an error", func() {
+				var err error
+				Eventually(session.Err()).Should(Receive(&err))
+				urlErr, ok := err.(*url.Error)
+				Ω(ok).Should(BeTrue())
+				opErr, ok := urlErr.Err.(*net.OpError)
+				Ω(ok).Should(BeTrue())
+				Ω(opErr.Op).Should(Equal("dial"))
 			})
 		})
 	})

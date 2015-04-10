@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/hashicorp/consul/api"
@@ -18,22 +17,22 @@ func (e LostLockError) Error() string {
 }
 
 var ErrInvalidSession = errors.New("invalid session")
-var ErrAlreadyRenewed = errors.New("already renewed")
+var ErrDestroyed = errors.New("already destroyed")
 
 type Session struct {
 	kv *api.KV
 
-	id         string
 	name       string
 	sessionMgr SessionManager
 	ttl        time.Duration
-	doneCh     chan struct{}
-	errCh      chan error
 
-	destroyOnce sync.Once
-	lostLock    string
+	errCh chan error
 
-	renewed int32
+	lock      sync.Mutex
+	id        string
+	destroyed bool
+	doneCh    chan struct{}
+	lostLock  string
 }
 
 func NewSession(sessionName string, ttl time.Duration, client *api.Client, sessionMgr SessionManager) (*Session, error) {
@@ -41,41 +40,17 @@ func NewSession(sessionName string, ttl time.Duration, client *api.Client, sessi
 }
 
 func newSession(sessionName string, ttl time.Duration, kv *api.KV, sessionMgr SessionManager) (*Session, error) {
-	se := &api.SessionEntry{
-		Name:      sessionName,
-		Behavior:  api.SessionBehaviorDelete,
-		TTL:       ttl.String(),
-		LockDelay: 1 * time.Nanosecond,
-	}
-
-	id, renewTTL, err := renewOrCreate(se, sessionMgr)
-	if err != nil {
-		return nil, err
-	}
-
 	doneCh := make(chan struct{}, 1)
 	errCh := make(chan error, 1)
 
 	s := &Session{
 		kv:         kv,
-		id:         id,
 		name:       sessionName,
 		sessionMgr: sessionMgr,
 		ttl:        ttl,
 		doneCh:     doneCh,
 		errCh:      errCh,
 	}
-
-	go func() {
-		err := sessionMgr.RenewPeriodic(renewTTL, id, nil, doneCh)
-		if s.lostLock != "" {
-			err = LostLockError(s.lostLock)
-		} else {
-			err = convertError(err)
-		}
-
-		errCh <- err
-	}()
 
 	return s, nil
 }
@@ -89,26 +64,89 @@ func (s *Session) Err() chan error {
 }
 
 func (s *Session) Destroy() {
-	s.destroyOnce.Do(func() {
-		close(s.doneCh)
-		s.sessionMgr.Destroy(s.id, nil)
-	})
+	s.lock.Lock()
+	s.destroy()
+	s.lock.Unlock()
 }
 
-func (s *Session) Renew() (*Session, error) {
-	if atomic.CompareAndSwapInt32(&s.renewed, 0, 1) == true {
-		s.Destroy()
-		session, err := newSession(s.name, s.ttl, s.kv, s.sessionMgr)
-		if err != nil {
-			atomic.CompareAndSwapInt32(&s.renewed, 1, 0)
+func (s *Session) destroy() {
+	if s.destroyed == false {
+		close(s.doneCh)
+
+		if s.id != "" {
+			s.sessionMgr.Destroy(s.id, nil)
 		}
-		return session, err
+
+		s.destroyed = true
+	}
+}
+
+func (s *Session) createOrRenewSession() error {
+	if s.destroyed {
+		return ErrDestroyed
 	}
 
-	return nil, ErrAlreadyRenewed
+	if s.id != "" {
+		return nil
+	}
+
+	se := &api.SessionEntry{
+		Name:      s.name,
+		Behavior:  api.SessionBehaviorDelete,
+		TTL:       s.ttl.String(),
+		LockDelay: 1 * time.Nanosecond,
+	}
+
+	id, renewTTL, err := renewOrCreate(se, s.sessionMgr)
+	if err != nil {
+		return err
+	}
+
+	s.id = id
+
+	go func() {
+		err := s.sessionMgr.RenewPeriodic(renewTTL, id, nil, s.doneCh)
+		if s.lostLock != "" {
+			err = LostLockError(s.lostLock)
+		} else {
+			err = convertError(err)
+		}
+
+		s.errCh <- err
+	}()
+
+	return err
+}
+
+func (s *Session) Recreate() (*Session, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	session, err := newSession(s.name, s.ttl, s.kv, s.sessionMgr)
+	if err != nil {
+		return nil, err
+	}
+
+	err = session.createOrRenewSession()
+	if err != nil {
+		return nil, err
+	}
+
+	if s.id != session.id {
+		s.destroy()
+	}
+
+	return session, err
 }
 
 func (s *Session) AcquireLock(key string, value []byte) error {
+	s.lock.Lock()
+	err := s.createOrRenewSession()
+	s.lock.Unlock()
+	if err != nil {
+		return err
+	}
+
 	lock, err := s.sessionMgr.NewLock(s.id, key, value)
 	if err != nil {
 		return convertError(err)
@@ -132,6 +170,13 @@ func (s *Session) AcquireLock(key string, value []byte) error {
 }
 
 func (s *Session) SetPresence(key string, value []byte) (<-chan string, error) {
+	s.lock.Lock()
+	err := s.createOrRenewSession()
+	s.lock.Unlock()
+	if err != nil {
+		return nil, err
+	}
+
 	lock, err := s.sessionMgr.NewLock(s.id, key, value)
 	if err != nil {
 		return nil, convertError(err)

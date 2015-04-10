@@ -63,7 +63,6 @@ func (s *Session) WatchForDisappearancesUnder(logger lager.Logger, prefix string
 				case <-s.doneCh:
 					return
 				}
-
 			}
 
 			keys = newKeys

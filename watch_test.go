@@ -66,9 +66,10 @@ var _ = Describe("Watching", func() {
 				})
 			})
 
-			Context("when cancelling", func() {
+			Context("when destroying the session", func() {
 				It("closes the disappearance channel", func() {
 					session.Destroy()
+
 					Eventually(disappearChan, 15).Should(BeClosed())
 				})
 			})
