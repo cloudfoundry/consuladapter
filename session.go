@@ -108,12 +108,15 @@ func (s *Session) createSession() error {
 
 	go func() {
 		err := s.sessionMgr.RenewPeriodic(renewTTL, id, nil, s.doneCh)
-		if s.lostLock != "" {
-			err = LostLockError(s.lostLock)
+		s.lock.Lock()
+		lostLock := s.lostLock
+		s.lock.Unlock()
+
+		if lostLock != "" {
+			err = LostLockError(lostLock)
 		} else {
 			err = convertError(err)
 		}
-
 		s.errCh <- err
 	}()
 
@@ -150,16 +153,18 @@ func (s *Session) AcquireLock(key string, value []byte) error {
 		return convertError(err)
 	}
 
-	lostLock, err := lock.Lock(s.doneCh)
+	lostCh, err := lock.Lock(s.doneCh)
 	if err != nil {
 		return convertError(err)
 	}
 
 	go func() {
 		select {
-		case <-lostLock:
+		case <-lostCh:
+			s.lock.Lock()
 			s.lostLock = key
-			s.Destroy()
+			s.destroy()
+			s.lock.Unlock()
 		case <-s.doneCh:
 		}
 	}()
@@ -180,7 +185,7 @@ func (s *Session) SetPresence(key string, value []byte) (<-chan string, error) {
 		return nil, convertError(err)
 	}
 
-	lostLock, err := lock.Lock(s.doneCh)
+	lostCh, err := lock.Lock(s.doneCh)
 	if err != nil {
 		return nil, convertError(err)
 	}
@@ -188,7 +193,7 @@ func (s *Session) SetPresence(key string, value []byte) (<-chan string, error) {
 	presenceLost := make(chan string, 1)
 	go func() {
 		select {
-		case <-lostLock:
+		case <-lostCh:
 			presenceLost <- key
 		case <-s.doneCh:
 		}
