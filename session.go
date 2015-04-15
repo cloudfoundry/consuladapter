@@ -13,7 +13,7 @@ import (
 type LostLockError string
 
 func (e LostLockError) Error() string {
-	return fmt.Sprintf("Lost lock '%s'", e)
+	return fmt.Sprintf("Lost lock '%s'", string(e))
 }
 
 var ErrInvalidSession = errors.New("invalid session")
@@ -56,6 +56,8 @@ func newSession(sessionName string, ttl time.Duration, kv *api.KV, sessionMgr Se
 }
 
 func (s *Session) ID() string {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	return s.id
 }
 
