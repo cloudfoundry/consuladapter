@@ -116,6 +116,18 @@ var _ = Describe("Locks and Presence", func() {
 				Eventually(session.Err()).Should(Receive(Equal(consuladapter.LostLockError(lockKey))))
 			})
 
+			Context("when Lock() is stopped (session is destroyed)", func() {
+				BeforeEach(func() {
+					lock := &fakes.FakeLock{}
+					lock.LockReturns(nil, nil)
+					sessionMgr.NewLockReturns(lock, nil)
+				})
+
+				It("returns an error", func() {
+					Ω(lockErr).Should(Equal(consuladapter.ErrCancelled))
+				})
+			})
+
 			Context("when recreating the Session", func() {
 				var newSession *consuladapter.Session
 
@@ -239,6 +251,18 @@ var _ = Describe("Locks and Presence", func() {
 
 			Consistently(session.Err()).ShouldNot(Receive())
 			Eventually(presenceLost).Should(Receive(Equal(presenceKey)))
+		})
+
+		Context("when Lock() is stopped (session is destroyed)", func() {
+			BeforeEach(func() {
+				lock := &fakes.FakeLock{}
+				lock.LockReturns(nil, nil)
+				sessionMgr.NewLockReturns(lock, nil)
+			})
+
+			It("returns an error", func() {
+				Ω(presenceErr).Should(Equal(consuladapter.ErrCancelled))
+			})
 		})
 
 		Context("with another session", func() {

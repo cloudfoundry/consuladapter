@@ -18,6 +18,7 @@ func (e LostLockError) Error() string {
 
 var ErrInvalidSession = errors.New("invalid session")
 var ErrDestroyed = errors.New("already destroyed")
+var ErrCancelled = errors.New("cancelled")
 
 type Session struct {
 	kv *api.KV
@@ -159,6 +160,9 @@ func (s *Session) AcquireLock(key string, value []byte) error {
 	if err != nil {
 		return convertError(err)
 	}
+	if lostCh == nil {
+		return ErrCancelled
+	}
 
 	go func() {
 		select {
@@ -190,6 +194,9 @@ func (s *Session) SetPresence(key string, value []byte) (<-chan string, error) {
 	lostCh, err := lock.Lock(s.doneCh)
 	if err != nil {
 		return nil, convertError(err)
+	}
+	if lostCh == nil {
+		return nil, ErrCancelled
 	}
 
 	presenceLost := make(chan string, 1)
