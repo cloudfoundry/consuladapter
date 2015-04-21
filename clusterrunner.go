@@ -84,7 +84,7 @@ func (cr *ClusterRunner) Start() {
 			Name:              fmt.Sprintf("consul_cluster[%d]", i),
 			AnsiColorCode:     "35m",
 			StartCheck:        "agent: Join completed.",
-			StartCheckTimeout: 5 * time.Second,
+			StartCheckTimeout: 10 * time.Second,
 			Command: exec.Command(
 				"consul",
 				"agent",
