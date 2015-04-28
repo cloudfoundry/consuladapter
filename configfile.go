@@ -88,17 +88,17 @@ func writeConfigFile(
 ) string {
 	filePath := path.Join(configDir, fmt.Sprintf("%s.json", nodeName))
 	file, err := os.Create(filePath)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	config := newConfigFile(dataDir, nodeName, clusterStartingPort, index, numNodes)
 	configJSON, err := json.Marshal(config)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	_, err = file.Write(configJSON)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = file.Close()
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	return filePath
 }

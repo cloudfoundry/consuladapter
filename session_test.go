@@ -43,29 +43,29 @@ var _ = Describe("Session", func() {
 			BeforeEach(stopCluster)
 
 			It("a session can be created", func() {
-				Ω(newSessionErr).ShouldNot(HaveOccurred())
-				Ω(session).ShouldNot(BeNil())
+				Expect(newSessionErr).NotTo(HaveOccurred())
+				Expect(session).NotTo(BeNil())
 			})
 		})
 
 		It("creates a new session", func() {
-			Ω(newSessionErr).ShouldNot(HaveOccurred())
-			Ω(session).ShouldNot(BeNil())
+			Expect(newSessionErr).NotTo(HaveOccurred())
+			Expect(session).NotTo(BeNil())
 		})
 
 		Describe("Session#Recreate", func() {
 			JustBeforeEach(func() {
 				err := session.AcquireLock("foo", []byte{})
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("destroys the current session if present", func() {
 				_, err := session.Recreate()
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() *api.SessionEntry {
 					entries, _, err := client.Session().List(nil)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 					return findSession(session.ID(), entries)
 				}).Should(BeNil())
 			})
@@ -73,11 +73,11 @@ var _ = Describe("Session", func() {
 			It("creates a new session if not present", func() {
 				session.Destroy()
 				renewedSession, err := session.Recreate()
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() *api.SessionEntry {
 					entries, _, err := client.Session().List(nil)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 					return findSession(renewedSession.ID(), entries)
 				}).ShouldNot(BeNil())
 			})
@@ -86,11 +86,11 @@ var _ = Describe("Session", func() {
 		Describe("Session#Destroy", func() {
 			JustBeforeEach(func() {
 				err := session.AcquireLock("a-key", []byte("a-value"))
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() []*api.SessionEntry {
 					entries, _, err := client.Session().List(nil)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 					return entries
 				}).Should(HaveLen(1))
 
@@ -98,15 +98,15 @@ var _ = Describe("Session", func() {
 			})
 
 			It("destroys the session", func() {
-				Ω(sessionMgr.DestroyCallCount()).Should(Equal(1))
+				Expect(sessionMgr.DestroyCallCount()).To(Equal(1))
 				id, _ := sessionMgr.DestroyArgsForCall(0)
-				Ω(id).Should(Equal(session.ID()))
+				Expect(id).To(Equal(session.ID()))
 			})
 
 			It("removes the session", func() {
 				Eventually(func() *api.SessionEntry {
 					entries, _, err := client.Session().List(nil)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 					return findSession(session.ID(), entries)
 				}).Should(BeNil())
 			})

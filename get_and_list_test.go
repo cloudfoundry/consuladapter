@@ -31,13 +31,13 @@ var _ = Describe("Get and List Acquired Data", func() {
 		Context("when a lock is present", func() {
 			BeforeEach(func() {
 				err := session.AcquireLock(lockKey, lockValue)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("retrieves the lock data", func() {
 				val, err := session.GetAcquiredValue(lockKey)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(val).Should(Equal(lockValue))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(val).To(Equal(lockValue))
 			})
 
 			Context("when the session is destroyed", func() {
@@ -59,13 +59,13 @@ var _ = Describe("Get and List Acquired Data", func() {
 		Context("when presence is set", func() {
 			BeforeEach(func() {
 				_, err := session.SetPresence(presenceKey, presenceValue)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("retrieves the presence data", func() {
 				val, err := session.GetAcquiredValue(presenceKey)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(val).Should(Equal(presenceValue))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(val).To(Equal(presenceValue))
 			})
 
 			Context("when the session is destroyed", func() {
@@ -89,19 +89,19 @@ var _ = Describe("Get and List Acquired Data", func() {
 
 			BeforeEach(func() {
 				_, err := client.KV().Put(&api.KVPair{Key: unowned}, nil)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("returns KeyNotFound", func() {
 				_, err := session.GetAcquiredValue(unowned)
-				Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError(unowned)))
+				Expect(err).To(Equal(consuladapter.NewKeyNotFoundError(unowned)))
 			})
 		})
 
 		Context("when the key not present", func() {
 			It("returns a KeyNotFound error", func() {
 				_, err := session.GetAcquiredValue("not-present")
-				Ω(err).Should(Equal(consuladapter.NewKeyNotFoundError("not-present")))
+				Expect(err).To(Equal(consuladapter.NewKeyNotFoundError("not-present")))
 			})
 		})
 	})
@@ -121,21 +121,21 @@ var _ = Describe("Get and List Acquired Data", func() {
 			client = clusterRunner.NewClient()
 
 			err := session.AcquireLock(lockKey, lockValue)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			_, err = session.SetPresence(presenceKey, presenceValue)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			_, err = client.KV().Put(&api.KVPair{Key: unowned}, nil)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("list acquired keys", func() {
 			data, err := session.ListAcquiredValues("under")
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(data).Should(HaveLen(2))
-			Ω(data[lockKey]).Should(Equal(lockValue))
-			Ω(data[presenceKey]).Should(Equal(presenceValue))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(data).To(HaveLen(2))
+			Expect(data[lockKey]).To(Equal(lockValue))
+			Expect(data[presenceKey]).To(Equal(presenceValue))
 		})
 
 		Context("when the session is destroyed", func() {
@@ -147,7 +147,7 @@ var _ = Describe("Get and List Acquired Data", func() {
 				otherAdapter := clusterRunner.NewSession("otherSession")
 				Eventually(func() map[string][]byte {
 					pairs, err := otherAdapter.ListAcquiredValues("under")
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 					return pairs
 				}).Should(Equal(map[string][]byte{}))
 			})
@@ -156,19 +156,19 @@ var _ = Describe("Get and List Acquired Data", func() {
 		Context("when no keys are present", func() {
 			It("returns an empty set", func() {
 				_, err := session.ListAcquiredValues("not-present")
-				Ω(err).Should(Equal(consuladapter.NewPrefixNotFoundError("not-present")))
+				Expect(err).To(Equal(consuladapter.NewPrefixNotFoundError("not-present")))
 			})
 
 			Context("when the prefix is present", func() {
 				BeforeEach(func() {
 					_, err := client.KV().Put(&api.KVPair{Key: unowned, Value: []byte{}}, nil)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("returns an empty result", func() {
 					pairs, err := session.ListAcquiredValues(unowned)
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(pairs).Should(Equal(map[string][]byte{}))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(pairs).To(Equal(map[string][]byte{}))
 				})
 			})
 		})

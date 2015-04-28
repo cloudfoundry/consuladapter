@@ -30,7 +30,7 @@ var _ = Describe("Watching", func() {
 			client = clusterRunner.NewClient()
 
 			disappearChan = session.WatchForDisappearancesUnder(logger, "under")
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when there are keys", func() {
@@ -46,7 +46,7 @@ var _ = Describe("Watching", func() {
 
 			It("detects removals of keys", func() {
 				_, err := bsession.SetPresence("under/here", []byte("value"))
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				bsession.Destroy()
 
@@ -56,7 +56,7 @@ var _ = Describe("Watching", func() {
 			Context("with other prefixes", func() {
 				BeforeEach(func() {
 					_, err := bsession.SetPresence("other", []byte("value"))
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("does not detect removal of keys under other prefixes", func() {
@@ -86,7 +86,7 @@ var _ = Describe("Watching", func() {
 
 					bsession = clusterRunner.NewSession("bession")
 					_, err := bsession.SetPresence("under/here", []byte("value"))
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					bsession.Destroy()
 
@@ -102,7 +102,7 @@ var _ = Describe("Watching", func() {
 		BeforeEach(func() {
 			bsession = clusterRunner.NewSession("bsession")
 			_, err := bsession.SetPresence("under/here", []byte("value"))
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("detects removals of keys", func() {

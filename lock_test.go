@@ -41,14 +41,14 @@ var _ = Describe("Locks and Presence", func() {
 
 		It("is set with the expected defaults", func() {
 			entries, _, err := client.Session().List(nil)
-			Ω(err).ShouldNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			entry := findSession(session.ID(), entries)
-			Ω(entry).ShouldNot(BeNil())
-			Ω(entry.Name).Should(Equal("a-session"))
-			Ω(entry.ID).Should(Equal(session.ID()))
-			Ω(entry.Behavior).Should(Equal(api.SessionBehaviorDelete))
-			Ω(entry.TTL).Should(Equal("20s"))
-			Ω(entry.LockDelay).Should(BeZero())
+			Expect(entry).NotTo(BeNil())
+			Expect(entry.Name).To(Equal("a-session"))
+			Expect(entry.ID).To(Equal(session.ID()))
+			Expect(entry.Behavior).To(Equal(api.SessionBehaviorDelete))
+			Expect(entry.TTL).To(Equal("20s"))
+			Expect(entry.LockDelay).To(BeZero())
 		})
 
 		It("renews the session periodically", func() {
@@ -61,7 +61,7 @@ var _ = Describe("Locks and Presence", func() {
 			})
 
 			It("returns an error", func() {
-				Ω(operationErr().Error()).Should(Equal("nodename failed"))
+				Expect(operationErr().Error()).To(Equal("nodename failed"))
 			})
 		})
 
@@ -71,7 +71,7 @@ var _ = Describe("Locks and Presence", func() {
 			})
 
 			It("returns an error", func() {
-				Ω(operationErr().Error()).Should(Equal("session list failed"))
+				Expect(operationErr().Error()).To(Equal("session list failed"))
 			})
 		})
 
@@ -81,8 +81,8 @@ var _ = Describe("Locks and Presence", func() {
 			})
 
 			It("returns an error", func() {
-				Ω(operationErr()).Should(HaveOccurred())
-				Ω(operationErr().Error()).Should(Equal("create failed"))
+				Expect(operationErr()).To(HaveOccurred())
+				Expect(operationErr().Error()).To(Equal("create failed"))
 			})
 		})
 	}
@@ -100,18 +100,18 @@ var _ = Describe("Locks and Presence", func() {
 			sessionCreationTests(func() error { return lockErr })
 
 			It("creates acquired key/value", func() {
-				Ω(lockErr).ShouldNot(HaveOccurred())
+				Expect(lockErr).NotTo(HaveOccurred())
 
 				kvpair, _, err := client.KV().Get(lockKey, nil)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(kvpair.Session).Should(Equal(session.ID()))
-				Ω(kvpair.Value).Should(Equal(lockValue))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(kvpair.Session).To(Equal(session.ID()))
+				Expect(kvpair.Value).To(Equal(lockValue))
 			})
 
 			It("destroys the session when the lock is lost", func() {
 				ok, _, err := client.KV().Release(&api.KVPair{Key: lockKey, Session: session.ID()}, nil)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(ok).Should(BeTrue())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ok).To(BeTrue())
 
 				Eventually(session.Err()).Should(Receive(Equal(consuladapter.LostLockError(lockKey))))
 			})
@@ -124,7 +124,7 @@ var _ = Describe("Locks and Presence", func() {
 				})
 
 				It("returns an error", func() {
-					Ω(lockErr).Should(Equal(consuladapter.ErrCancelled))
+					Expect(lockErr).To(Equal(consuladapter.ErrCancelled))
 				})
 			})
 
@@ -134,7 +134,7 @@ var _ = Describe("Locks and Presence", func() {
 				JustBeforeEach(func() {
 					var err error
 					newSession, err = session.Recreate()
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				AfterEach(func() {
@@ -142,7 +142,7 @@ var _ = Describe("Locks and Presence", func() {
 				})
 
 				It("creates a new session", func() {
-					Ω(newSession.ID()).ShouldNot(Equal(session.ID()))
+					Expect(newSession.ID()).NotTo(Equal(session.ID()))
 				})
 
 				It("can contend for the Lock", func() {
@@ -158,7 +158,7 @@ var _ = Describe("Locks and Presence", func() {
 			Context("with another session", func() {
 				It("acquires the lock when released", func() {
 					bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 					defer bsession.Destroy()
 
 					errChan := make(chan error, 1)
@@ -173,8 +173,8 @@ var _ = Describe("Locks and Presence", func() {
 
 					Eventually(errChan, api.DefaultLockRetryTime*2).Should(Receive(BeNil()))
 					kvpair, _, err := client.KV().Get(lockKey, nil)
-					Ω(err).ShouldNot(HaveOccurred())
-					Ω(kvpair.Session).Should(Equal(bsession.ID()))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(kvpair.Session).To(Equal(bsession.ID()))
 				})
 			})
 
@@ -188,10 +188,10 @@ var _ = Describe("Locks and Presence", func() {
 				Context("when acquiring a lock", func() {
 					It("fails", func() {
 						bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
-						Ω(err).ShouldNot(HaveOccurred())
+						Expect(err).NotTo(HaveOccurred())
 
 						err = bsession.AcquireLock(lockKey, lockValue)
-						Ω(err).Should(HaveOccurred())
+						Expect(err).To(HaveOccurred())
 					})
 				})
 			})
@@ -211,12 +211,12 @@ var _ = Describe("Locks and Presence", func() {
 
 					// a race between 2 possibilities
 					if urlErr, ok := err.(*url.Error); ok {
-						Ω(ok).Should(BeTrue())
+						Expect(ok).To(BeTrue())
 						opErr, ok := urlErr.Err.(*net.OpError)
-						Ω(ok).Should(BeTrue())
-						Ω(opErr.Op).Should(Equal("dial"))
+						Expect(ok).To(BeTrue())
+						Expect(opErr.Op).To(Equal("dial"))
 					} else {
-						Ω(err).Should(Equal(consuladapter.LostLockError(lockKey)))
+						Expect(err).To(Equal(consuladapter.LostLockError(lockKey)))
 					}
 				})
 			})
@@ -236,18 +236,18 @@ var _ = Describe("Locks and Presence", func() {
 		sessionCreationTests(func() error { return presenceErr })
 
 		It("creates an acquired key/value", func() {
-			Ω(presenceErr).ShouldNot(HaveOccurred())
+			Expect(presenceErr).NotTo(HaveOccurred())
 
 			kvpair, _, err := client.KV().Get(presenceKey, nil)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(kvpair.Session).Should(Equal(session.ID()))
-			Ω(kvpair.Value).Should(Equal(presenceValue))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(kvpair.Session).To(Equal(session.ID()))
+			Expect(kvpair.Value).To(Equal(presenceValue))
 		})
 
 		It("the session remains when the presence is lost", func() {
 			ok, _, err := client.KV().Release(&api.KVPair{Key: presenceKey, Session: session.ID()}, nil)
-			Ω(err).ShouldNot(HaveOccurred())
-			Ω(ok).Should(BeTrue())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ok).To(BeTrue())
 
 			Consistently(session.Err()).ShouldNot(Receive())
 			Eventually(presenceLost).Should(Receive(Equal(presenceKey)))
@@ -261,14 +261,14 @@ var _ = Describe("Locks and Presence", func() {
 			})
 
 			It("returns an error", func() {
-				Ω(presenceErr).Should(Equal(consuladapter.ErrCancelled))
+				Expect(presenceErr).To(Equal(consuladapter.ErrCancelled))
 			})
 		})
 
 		Context("with another session", func() {
 			It("acquires the lock when released", func() {
 				bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
-				Ω(err).ShouldNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				defer bsession.Destroy()
 
 				errChan := make(chan error, 1)
@@ -284,8 +284,8 @@ var _ = Describe("Locks and Presence", func() {
 
 				Eventually(errChan, api.DefaultLockRetryTime*2).Should(Receive(BeNil()))
 				kvpair, _, err := client.KV().Get(presenceKey, nil)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(kvpair.Session).Should(Equal(bsession.ID()))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(kvpair.Session).To(Equal(bsession.ID()))
 			})
 		})
 
@@ -299,10 +299,10 @@ var _ = Describe("Locks and Presence", func() {
 			Context("when setting presence", func() {
 				It("fails", func() {
 					bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
-					Ω(err).ShouldNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bsession.SetPresence(presenceKey, presenceValue)
-					Ω(err).Should(HaveOccurred())
+					Expect(err).To(HaveOccurred())
 				})
 			})
 		})
@@ -320,10 +320,10 @@ var _ = Describe("Locks and Presence", func() {
 				var err error
 				Eventually(session.Err()).Should(Receive(&err))
 				urlErr, ok := err.(*url.Error)
-				Ω(ok).Should(BeTrue())
+				Expect(ok).To(BeTrue())
 				opErr, ok := urlErr.Err.(*net.OpError)
-				Ω(ok).Should(BeTrue())
-				Ω(opErr.Op).Should(Equal("dial"))
+				Expect(ok).To(BeTrue())
+				Expect(opErr.Op).To(Equal("dial"))
 			})
 		})
 	})

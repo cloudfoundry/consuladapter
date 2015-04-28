@@ -35,9 +35,9 @@ const defaultDataDirPrefix = "consul_data"
 const defaultConfigDirPrefix = "consul_config"
 
 func NewClusterRunner(startingPort int, numNodes int, scheme string) *ClusterRunner {
-	Ω(startingPort).Should(BeNumerically(">", 0))
-	Ω(startingPort).Should(BeNumerically("<", 1<<16))
-	Ω(numNodes).Should(BeNumerically(">", 0))
+	Expect(startingPort).To(BeNumerically(">", 0))
+	Expect(startingPort).To(BeNumerically("<", 1<<16))
+	Expect(numNodes).To(BeNumerically(">", 0))
 
 	return &ClusterRunner{
 		startingPort: startingPort,
@@ -57,11 +57,11 @@ func (cr *ClusterRunner) Start() {
 	}
 
 	tmpDir, err := ioutil.TempDir("", defaultDataDirPrefix)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 	cr.dataDir = tmpDir
 
 	tmpDir, err = ioutil.TempDir("", defaultConfigDirPrefix)
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 	cr.configDir = tmpDir
 
 	cr.consulProcesses = make([]ifrit.Process, cr.numNodes)
@@ -106,7 +106,7 @@ func (cr *ClusterRunner) NewClient() *api.Client {
 		Scheme:     cr.scheme,
 		HttpClient: cf_http.NewStreamingClient(),
 	})
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 	return client
 }
 
@@ -164,7 +164,7 @@ func (cr *ClusterRunner) URL() string {
 func (cr *ClusterRunner) NewSession(sessionName string) *Session {
 	client := cr.NewClient()
 	adapter, err := NewSession(sessionName, 10*time.Second, client, NewSessionManager(client))
-	Ω(err).ShouldNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	return adapter
 }
