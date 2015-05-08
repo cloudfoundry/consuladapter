@@ -13,6 +13,7 @@ type SessionManager interface {
 	NodeName() (string, error)
 	Node(node string, q *api.QueryOptions) ([]*api.SessionEntry, *api.QueryMeta, error)
 	Create(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error)
+	CreateNoChecks(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error)
 	Destroy(id string, q *api.WriteOptions) (*api.WriteMeta, error)
 	Renew(id string, q *api.WriteOptions) (*api.SessionEntry, *api.WriteMeta, error)
 	RenewPeriodic(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error
@@ -47,6 +48,10 @@ func (sm *sessionMgr) Node(node string, q *api.QueryOptions) ([]*api.SessionEntr
 
 func (sm *sessionMgr) Create(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error) {
 	return sm.session.Create(se, q)
+}
+
+func (sm *sessionMgr) CreateNoChecks(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error) {
+	return sm.session.CreateNoChecks(se, q)
 }
 
 func (sm *sessionMgr) Destroy(id string, q *api.WriteOptions) (*api.WriteMeta, error) {

@@ -18,17 +18,23 @@ var _ = Describe("Locks and Presence", func() {
 	var client *api.Client
 	var sessionMgr *fakes.FakeSessionManager
 	var sessionErr error
+	var noChecks bool
 
 	BeforeEach(func() {
 		startCluster()
 		client = clusterRunner.NewClient()
 		sessionMgr = newFakeSessionManager(client)
+		noChecks = false
 	})
 
 	AfterEach(stopClusterAndSession)
 
 	JustBeforeEach(func() {
-		session, sessionErr = consuladapter.NewSession("a-session", 20*time.Second, client, sessionMgr)
+		if noChecks {
+			session, sessionErr = consuladapter.NewSessionNoChecks("a-session", 20*time.Second, client, sessionMgr)
+		} else {
+			session, sessionErr = consuladapter.NewSession("a-session", 20*time.Second, client, sessionMgr)
+		}
 	})
 
 	AfterEach(func() {
@@ -78,6 +84,7 @@ var _ = Describe("Locks and Presence", func() {
 		Context("when Create fails", func() {
 			BeforeEach(func() {
 				sessionMgr.CreateReturns("", nil, errors.New("create failed"))
+				sessionMgr.CreateNoChecksReturns("", nil, errors.New("create failed"))
 			})
 
 			It("returns an error", func() {
@@ -228,6 +235,10 @@ var _ = Describe("Locks and Presence", func() {
 		var presenceValue = []byte{'1'}
 		var presenceLost <-chan string
 		var presenceErr error
+
+		BeforeEach(func() {
+			noChecks = true
+		})
 
 		JustBeforeEach(func() {
 			presenceLost, presenceErr = session.SetPresence(presenceKey, presenceValue)

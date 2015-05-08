@@ -11,6 +11,9 @@ import (
 	"github.com/pivotal-golang/lager/lagertest"
 )
 
+// copied from consul to prevent unnecessary additional dependencies
+const serfCheckID = "serfHealth"
+
 var _ = Describe("Session", func() {
 	BeforeEach(startCluster)
 	AfterEach(stopCluster)
@@ -20,16 +23,22 @@ var _ = Describe("Session", func() {
 	var session *consuladapter.Session
 	var newSessionErr error
 	var logger *lagertest.TestLogger
+	var noChecks bool
 
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("test")
 
 		client = clusterRunner.NewClient()
 		sessionMgr = newFakeSessionManager(client)
+		noChecks = false
 	})
 
 	JustBeforeEach(func() {
-		session, newSessionErr = consuladapter.NewSession("a-session", 20*time.Second, client, sessionMgr)
+		if noChecks {
+			session, newSessionErr = consuladapter.NewSessionNoChecks("a-session", 20*time.Second, client, sessionMgr)
+		} else {
+			session, newSessionErr = consuladapter.NewSession("a-session", 20*time.Second, client, sessionMgr)
+		}
 	})
 
 	AfterEach(func() {
@@ -53,33 +62,93 @@ var _ = Describe("Session", func() {
 			Expect(session).NotTo(BeNil())
 		})
 
-		Describe("Session#Recreate", func() {
+		Context("when a consul session is created", func() {
 			JustBeforeEach(func() {
 				err := session.AcquireLock("foo", []byte{})
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("destroys the current session if present", func() {
-				_, err := session.Recreate()
+			It("has checks", func() {
+				entries, _, err := client.Session().List(nil)
 				Expect(err).NotTo(HaveOccurred())
-
-				Eventually(func() *api.SessionEntry {
-					entries, _, err := client.Session().List(nil)
-					Expect(err).NotTo(HaveOccurred())
-					return findSession(session.ID(), entries)
-				}).Should(BeNil())
+				session := findSession(session.ID(), entries)
+				Expect(session.Checks).To(ConsistOf(serfCheckID))
 			})
 
-			It("creates a new session if not present", func() {
-				session.Destroy()
-				renewedSession, err := session.Recreate()
-				Expect(err).NotTo(HaveOccurred())
+			Context("with no checks", func() {
+				BeforeEach(func() {
+					noChecks = true
+				})
 
-				Eventually(func() *api.SessionEntry {
+				It("has no checks", func() {
 					entries, _, err := client.Session().List(nil)
 					Expect(err).NotTo(HaveOccurred())
-					return findSession(renewedSession.ID(), entries)
-				}).ShouldNot(BeNil())
+					session := findSession(session.ID(), entries)
+					Expect(session.Checks).To(BeEmpty())
+				})
+			})
+		})
+
+		Describe("Session#Recreate", func() {
+			var newSession *consuladapter.Session
+
+			JustBeforeEach(func() {
+				err := session.AcquireLock("foo", []byte{})
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			Context("when the session exists", func() {
+				JustBeforeEach(func() {
+					var err error
+					newSession, err = session.Recreate()
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("destroys the current session", func() {
+					Eventually(func() *api.SessionEntry {
+						entries, _, err := client.Session().List(nil)
+						Expect(err).NotTo(HaveOccurred())
+						return findSession(session.ID(), entries)
+					}).Should(BeNil())
+				})
+
+				It("has checks", func() {
+					entries, _, err := client.Session().List(nil)
+					Expect(err).NotTo(HaveOccurred())
+					s := findSession(newSession.ID(), entries)
+					Expect(s.Checks).To(ConsistOf(serfCheckID))
+				})
+
+				Context("with no checks", func() {
+					BeforeEach(func() {
+						noChecks = true
+					})
+
+					It("has no checks", func() {
+						entries, _, err := client.Session().List(nil)
+						Expect(err).NotTo(HaveOccurred())
+						session := findSession(newSession.ID(), entries)
+						Expect(session.Checks).To(BeEmpty())
+					})
+				})
+			})
+
+			Context("when the session does not exist", func() {
+				var newSession *consuladapter.Session
+
+				JustBeforeEach(func() {
+					var err error
+					session.Destroy()
+					newSession, err = session.Recreate()
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("has checks", func() {
+					entries, _, err := client.Session().List(nil)
+					Expect(err).NotTo(HaveOccurred())
+					s := findSession(newSession.ID(), entries)
+					Expect(s.Checks).To(ConsistOf(serfCheckID))
+				})
 			})
 		})
 

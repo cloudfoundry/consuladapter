@@ -38,6 +38,17 @@ type FakeSessionManager struct {
 		result2 *api.WriteMeta
 		result3 error
 	}
+	CreateNoChecksStub        func(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error)
+	createNoChecksMutex       sync.RWMutex
+	createNoChecksArgsForCall []struct {
+		se *api.SessionEntry
+		q  *api.WriteOptions
+	}
+	createNoChecksReturns struct {
+		result1 string
+		result2 *api.WriteMeta
+		result3 error
+	}
 	DestroyStub        func(id string, q *api.WriteOptions) (*api.WriteMeta, error)
 	destroyMutex       sync.RWMutex
 	destroyArgsForCall []struct {
@@ -172,6 +183,41 @@ func (fake *FakeSessionManager) CreateArgsForCall(i int) (*api.SessionEntry, *ap
 func (fake *FakeSessionManager) CreateReturns(result1 string, result2 *api.WriteMeta, result3 error) {
 	fake.CreateStub = nil
 	fake.createReturns = struct {
+		result1 string
+		result2 *api.WriteMeta
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *FakeSessionManager) CreateNoChecks(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error) {
+	fake.createNoChecksMutex.Lock()
+	fake.createNoChecksArgsForCall = append(fake.createNoChecksArgsForCall, struct {
+		se *api.SessionEntry
+		q  *api.WriteOptions
+	}{se, q})
+	fake.createNoChecksMutex.Unlock()
+	if fake.CreateNoChecksStub != nil {
+		return fake.CreateNoChecksStub(se, q)
+	} else {
+		return fake.createNoChecksReturns.result1, fake.createNoChecksReturns.result2, fake.createNoChecksReturns.result3
+	}
+}
+
+func (fake *FakeSessionManager) CreateNoChecksCallCount() int {
+	fake.createNoChecksMutex.RLock()
+	defer fake.createNoChecksMutex.RUnlock()
+	return len(fake.createNoChecksArgsForCall)
+}
+
+func (fake *FakeSessionManager) CreateNoChecksArgsForCall(i int) (*api.SessionEntry, *api.WriteOptions) {
+	fake.createNoChecksMutex.RLock()
+	defer fake.createNoChecksMutex.RUnlock()
+	return fake.createNoChecksArgsForCall[i].se, fake.createNoChecksArgsForCall[i].q
+}
+
+func (fake *FakeSessionManager) CreateNoChecksReturns(result1 string, result2 *api.WriteMeta, result3 error) {
+	fake.CreateNoChecksStub = nil
+	fake.createNoChecksReturns = struct {
 		result1 string
 		result2 *api.WriteMeta
 		result3 error

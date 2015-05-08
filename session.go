@@ -26,6 +26,7 @@ type Session struct {
 	name       string
 	sessionMgr SessionManager
 	ttl        time.Duration
+	noChecks   bool
 
 	errCh chan error
 
@@ -37,10 +38,14 @@ type Session struct {
 }
 
 func NewSession(sessionName string, ttl time.Duration, client *api.Client, sessionMgr SessionManager) (*Session, error) {
-	return newSession(sessionName, ttl, client.KV(), sessionMgr)
+	return newSession(sessionName, ttl, false, client.KV(), sessionMgr)
 }
 
-func newSession(sessionName string, ttl time.Duration, kv *api.KV, sessionMgr SessionManager) (*Session, error) {
+func NewSessionNoChecks(sessionName string, ttl time.Duration, client *api.Client, sessionMgr SessionManager) (*Session, error) {
+	return newSession(sessionName, ttl, true, client.KV(), sessionMgr)
+}
+
+func newSession(sessionName string, ttl time.Duration, noChecks bool, kv *api.KV, sessionMgr SessionManager) (*Session, error) {
 	doneCh := make(chan struct{}, 1)
 	errCh := make(chan error, 1)
 
@@ -49,6 +54,7 @@ func newSession(sessionName string, ttl time.Duration, kv *api.KV, sessionMgr Se
 		name:       sessionName,
 		sessionMgr: sessionMgr,
 		ttl:        ttl,
+		noChecks:   noChecks,
 		doneCh:     doneCh,
 		errCh:      errCh,
 	}
@@ -102,7 +108,7 @@ func (s *Session) createSession() error {
 		LockDelay: 1 * time.Nanosecond,
 	}
 
-	id, renewTTL, err := create(se, s.sessionMgr)
+	id, renewTTL, err := create(se, s.noChecks, s.sessionMgr)
 	if err != nil {
 		return err
 	}
@@ -130,7 +136,7 @@ func (s *Session) Recreate() (*Session, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	session, err := newSession(s.name, s.ttl, s.kv, s.sessionMgr)
+	session, err := newSession(s.name, s.ttl, s.noChecks, s.kv, s.sessionMgr)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +217,7 @@ func (s *Session) SetPresence(key string, value []byte) (<-chan string, error) {
 	return presenceLost, nil
 }
 
-func create(se *api.SessionEntry, sessionMgr SessionManager) (string, string, error) {
+func create(se *api.SessionEntry, noChecks bool, sessionMgr SessionManager) (string, string, error) {
 	nodeName, err := sessionMgr.NodeName()
 	if err != nil {
 		return "", "", err
@@ -232,7 +238,14 @@ func create(se *api.SessionEntry, sessionMgr SessionManager) (string, string, er
 		}
 	}
 
-	id, _, err := sessionMgr.Create(se, nil)
+	var f func(*api.SessionEntry, *api.WriteOptions) (string, *api.WriteMeta, error)
+	if noChecks {
+		f = sessionMgr.CreateNoChecks
+	} else {
+		f = sessionMgr.Create
+	}
+
+	id, _, err := f(se, nil)
 	if err != nil {
 		return "", "", err
 	}

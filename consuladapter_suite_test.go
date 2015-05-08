@@ -54,6 +54,7 @@ func newFakeSessionManager(client *api.Client) *fakes.FakeSessionManager {
 	sessionMgr.NodeNameStub = realSM.NodeName
 	sessionMgr.NodeStub = realSM.Node
 	sessionMgr.CreateStub = realSM.Create
+	sessionMgr.CreateNoChecksStub = realSM.CreateNoChecks
 	sessionMgr.DestroyStub = realSM.Destroy
 	sessionMgr.RenewStub = realSM.Renew
 	sessionMgr.RenewPeriodicStub = realSM.RenewPeriodic
