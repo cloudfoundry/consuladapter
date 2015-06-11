@@ -226,6 +226,18 @@ var _ = Describe("Locks and Presence", func() {
 						Expect(err).To(Equal(consuladapter.LostLockError(lockKey)))
 					}
 				})
+
+				It("destroys the session", func() {
+					var err error
+					Eventually(session.Err()).Should(Receive(&err))
+
+					acquireErr := make(chan error, 1)
+					go func() {
+						acquireErr <- session.AcquireLock(lockKey, lockValue)
+					}()
+
+					Eventually(acquireErr).Should(Receive(Equal(consuladapter.ErrDestroyed)))
+				})
 			})
 		})
 	})

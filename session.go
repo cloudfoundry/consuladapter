@@ -119,6 +119,7 @@ func (s *Session) createSession() error {
 		err := s.sessionMgr.RenewPeriodic(renewTTL, id, nil, s.doneCh)
 		s.lock.Lock()
 		lostLock := s.lostLock
+		s.destroy()
 		s.lock.Unlock()
 
 		if lostLock != "" {
