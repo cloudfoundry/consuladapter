@@ -4,8 +4,10 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/cloudfoundry-incubator/consuladapter/consulrunner"
 	"github.com/cloudfoundry-incubator/consuladapter/fakes"
 	"github.com/hashicorp/consul/api"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
@@ -20,12 +22,12 @@ func TestConsulAdapter(t *testing.T) {
 
 const clusterSize = 1
 
-var clusterRunner *consuladapter.ClusterRunner
+var clusterRunner *consulrunner.ClusterRunner
 var session *consuladapter.Session
 
 var _ = BeforeSuite(func() {
-	clusterStartingPort := 5001 + config.GinkgoConfig.ParallelNode*consuladapter.PortOffsetLength*clusterSize
-	clusterRunner = consuladapter.NewClusterRunner(clusterStartingPort, clusterSize, "http")
+	clusterStartingPort := 5001 + config.GinkgoConfig.ParallelNode*consulrunner.PortOffsetLength*clusterSize
+	clusterRunner = consulrunner.NewClusterRunner(clusterStartingPort, clusterSize, "http")
 })
 
 func stopCluster() {

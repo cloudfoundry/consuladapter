@@ -1,4 +1,4 @@
-package consuladapter
+package consulrunner
 
 import (
 	"encoding/json"

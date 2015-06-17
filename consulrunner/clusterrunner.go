@@ -1,4 +1,4 @@
-package consuladapter
+package consulrunner
 
 import (
 	"errors"
@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/cf_http"
+	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/hashicorp/consul/api"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
@@ -161,9 +162,9 @@ func (cr *ClusterRunner) URL() string {
 	return fmt.Sprintf("%s://%s", cr.scheme, cr.Address())
 }
 
-func (cr *ClusterRunner) NewSession(sessionName string) *Session {
+func (cr *ClusterRunner) NewSession(sessionName string) *consuladapter.Session {
 	client := cr.NewClient()
-	adapter, err := NewSession(sessionName, 10*time.Second, client, NewSessionManager(client))
+	adapter, err := consuladapter.NewSession(sessionName, 10*time.Second, client, consuladapter.NewSessionManager(client))
 	Expect(err).NotTo(HaveOccurred())
 
 	return adapter
