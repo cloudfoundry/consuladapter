@@ -214,7 +214,7 @@ var _ = Describe("Locks and Presence", func() {
 
 				It("reports an error", func() {
 					var err error
-					Eventually(session.Err()).Should(Receive(&err))
+					Eventually(session.Err(), 3*time.Second).Should(Receive(&err))
 
 					// a race between 2 possibilities
 					if urlErr, ok := err.(*url.Error); ok {
@@ -335,13 +335,13 @@ var _ = Describe("Locks and Presence", func() {
 				oldStub := sessionMgr.RenewPeriodicStub
 				sessionMgr.RenewPeriodicStub = func(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error {
 					stopCluster()
-					return oldStub("1s", id, q, doneCh)
+					return oldStub("500ms", id, q, doneCh)
 				}
 			})
 
 			It("reports an error", func() {
 				var err error
-				Eventually(session.Err()).Should(Receive(&err))
+				Eventually(session.Err(), 3*time.Second).Should(Receive(&err))
 				urlErr, ok := err.(*url.Error)
 				Expect(ok).To(BeTrue())
 				opErr, ok := urlErr.Err.(*net.OpError)

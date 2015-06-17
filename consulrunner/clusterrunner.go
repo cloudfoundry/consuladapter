@@ -28,6 +28,7 @@ type ClusterRunner struct {
 	dataDir         string
 	configDir       string
 	scheme          string
+	sessionTTL      time.Duration
 
 	mutex *sync.RWMutex
 }
@@ -44,9 +45,14 @@ func NewClusterRunner(startingPort int, numNodes int, scheme string) *ClusterRun
 		startingPort: startingPort,
 		numNodes:     numNodes,
 		scheme:       scheme,
+		sessionTTL:   5 * time.Second,
 
 		mutex: &sync.RWMutex{},
 	}
+}
+
+func (cr *ClusterRunner) SessionTTL() time.Duration {
+	return cr.sessionTTL
 }
 
 func (cr *ClusterRunner) Start() {
@@ -79,6 +85,7 @@ func (cr *ClusterRunner) Start() {
 			cr.startingPort,
 			i,
 			cr.numNodes,
+			cr.sessionTTL,
 		)
 
 		process := ginkgomon.Invoke(ginkgomon.New(ginkgomon.Config{

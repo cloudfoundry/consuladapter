@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 
 	. "github.com/onsi/gomega"
 )
@@ -37,6 +38,7 @@ type configFile struct {
 	RejoinAfterLeave   bool           `json:"rejoin_after_leave"`
 	DisableRemoteExec  bool           `json:"disable_remote_exec"`
 	DisableUpdateCheck bool           `json:"disable_update_check"`
+	SessionTTL         string         `json:"session_ttl_min"`
 }
 
 func newConfigFile(
@@ -45,6 +47,7 @@ func newConfigFile(
 	clusterStartingPort int,
 	index int,
 	numNodes int,
+	sessionTTL time.Duration,
 ) configFile {
 	startingPort := clusterStartingPort + PortOffsetLength*index
 	ports := map[string]int{
@@ -75,6 +78,7 @@ func newConfigFile(
 		RejoinAfterLeave:   true,
 		DisableRemoteExec:  true,
 		DisableUpdateCheck: true,
+		SessionTTL:         sessionTTL.String(),
 	}
 }
 
@@ -85,12 +89,13 @@ func writeConfigFile(
 	clusterStartingPort int,
 	index int,
 	numNodes int,
+	sessionTTL time.Duration,
 ) string {
 	filePath := path.Join(configDir, fmt.Sprintf("%s.json", nodeName))
 	file, err := os.Create(filePath)
 	Expect(err).NotTo(HaveOccurred())
 
-	config := newConfigFile(dataDir, nodeName, clusterStartingPort, index, numNodes)
+	config := newConfigFile(dataDir, nodeName, clusterStartingPort, index, numNodes, sessionTTL)
 	configJSON, err := json.Marshal(config)
 	Expect(err).NotTo(HaveOccurred())
 
