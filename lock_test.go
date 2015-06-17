@@ -229,7 +229,7 @@ var _ = Describe("Locks and Presence", func() {
 
 				It("destroys the session", func() {
 					var err error
-					Eventually(session.Err()).Should(Receive(&err))
+					Eventually(session.Err(), 2*time.Second).Should(Receive(&err))
 
 					acquireErr := make(chan error, 1)
 					go func() {
