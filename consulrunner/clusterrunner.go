@@ -96,6 +96,7 @@ func (cr *ClusterRunner) Start() {
 			Command: exec.Command(
 				"consul",
 				"agent",
+				"--log-level", "trace",
 				"--config-file", configFilePath,
 			),
 		}))
