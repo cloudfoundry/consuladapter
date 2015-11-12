@@ -144,7 +144,7 @@ func (cr *ClusterRunner) Stop() {
 	}
 
 	for i := 0; i < cr.numNodes; i++ {
-		ginkgomon.Interrupt(cr.consulProcesses[i], 5*time.Second)
+		stopSignal(cr.consulProcesses[i], 5*time.Second)
 	}
 
 	os.RemoveAll(cr.dataDir)
