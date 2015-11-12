@@ -135,7 +135,7 @@ func (cr *ClusterRunner) WaitUntilReady() {
 	}, 10, 100*time.Millisecond).Should(BeNil())
 }
 
-func (cr *ClusterRunner) stop(kill bool) {
+func (cr *ClusterRunner) Stop() {
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
 
@@ -144,25 +144,13 @@ func (cr *ClusterRunner) stop(kill bool) {
 	}
 
 	for i := 0; i < cr.numNodes; i++ {
-		if kill {
-			ginkgomon.Kill(cr.consulProcesses[i], 5*time.Second)
-		} else {
-			ginkgomon.Interrupt(cr.consulProcesses[i], 5*time.Second)
-		}
+		ginkgomon.Interrupt(cr.consulProcesses[i], 5*time.Second)
 	}
 
 	os.RemoveAll(cr.dataDir)
 	os.RemoveAll(cr.configDir)
 	cr.consulProcesses = nil
 	cr.running = false
-}
-
-func (cr *ClusterRunner) Stop() {
-	cr.stop(false)
-}
-
-func (cr *ClusterRunner) KillWithFire() {
-	cr.stop(true)
 }
 
 func (cr *ClusterRunner) ConsulCluster() string {
