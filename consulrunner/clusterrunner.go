@@ -119,6 +119,10 @@ func (cr *ClusterRunner) NewClient() *api.Client {
 	return client
 }
 
+func (cr *ClusterRunner) NewConsulClient() consuladapter.Client {
+	return consuladapter.NewConsulClient(cr.NewClient())
+}
+
 func (cr *ClusterRunner) WaitUntilReady() {
 	client := cr.NewClient()
 	catalog := client.Catalog()
