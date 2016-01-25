@@ -3,7 +3,7 @@ package consuladapter
 import "fmt"
 
 func (s *Session) GetAcquiredValue(key string) ([]byte, error) {
-	kvPair, _, err := s.kv.Get(key, nil)
+	kvPair, _, err := s.client.KV().Get(key, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -16,7 +16,7 @@ func (s *Session) GetAcquiredValue(key string) ([]byte, error) {
 }
 
 func (s *Session) ListAcquiredValues(prefix string) (map[string][]byte, error) {
-	kvPairs, _, err := s.kv.List(prefix, nil)
+	kvPairs, _, err := s.client.KV().List(prefix, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -27,7 +27,7 @@ func (s *Session) WatchForDisappearancesUnder(logger lager.Logger, prefix string
 		}
 
 		for {
-			newPairs, queryMeta, err := s.kv.List(prefix, queryOpts)
+			newPairs, queryMeta, err := s.client.KV().List(prefix, queryOpts)
 			if err != nil {
 				logger.Error("list-failed", err)
 				select {
@@ -49,7 +49,7 @@ func (s *Session) WatchForDisappearancesUnder(logger lager.Logger, prefix string
 
 			if newPairs == nil {
 				// key not found
-				_, err = s.kv.Put(&api.KVPair{Key: prefix, Value: emptyBytes}, nil)
+				_, err = s.client.KV().Put(&api.KVPair{Key: prefix, Value: emptyBytes}, nil)
 				if err != nil {
 					logger.Error("put-failed", err)
 					continue

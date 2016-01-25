@@ -21,7 +21,7 @@ var ErrDestroyed = errors.New("already destroyed")
 var ErrCancelled = errors.New("cancelled")
 
 type Session struct {
-	kv *api.KV
+	client *api.Client
 
 	name       string
 	sessionMgr SessionManager
@@ -38,19 +38,19 @@ type Session struct {
 }
 
 func NewSession(sessionName string, ttl time.Duration, client *api.Client, sessionMgr SessionManager) (*Session, error) {
-	return newSession(sessionName, ttl, false, client.KV(), sessionMgr)
+	return newSession(sessionName, ttl, false, client, sessionMgr)
 }
 
 func NewSessionNoChecks(sessionName string, ttl time.Duration, client *api.Client, sessionMgr SessionManager) (*Session, error) {
-	return newSession(sessionName, ttl, true, client.KV(), sessionMgr)
+	return newSession(sessionName, ttl, true, client, sessionMgr)
 }
 
-func newSession(sessionName string, ttl time.Duration, noChecks bool, kv *api.KV, sessionMgr SessionManager) (*Session, error) {
+func newSession(sessionName string, ttl time.Duration, noChecks bool, client *api.Client, sessionMgr SessionManager) (*Session, error) {
 	doneCh := make(chan struct{}, 1)
 	errCh := make(chan error, 1)
 
 	s := &Session{
-		kv:         kv,
+		client:     client,
 		name:       sessionName,
 		sessionMgr: sessionMgr,
 		ttl:        ttl,
@@ -137,7 +137,7 @@ func (s *Session) Recreate() (*Session, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	session, err := newSession(s.name, s.ttl, s.noChecks, s.kv, s.sessionMgr)
+	session, err := newSession(s.name, s.ttl, s.noChecks, s.client, s.sessionMgr)
 	if err != nil {
 		return nil, err
 	}
