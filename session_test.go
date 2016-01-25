@@ -19,7 +19,8 @@ var _ = Describe("Session", func() {
 	AfterEach(stopCluster)
 
 	var client *api.Client
-	var sessionMgr *fakes.FakeSessionManager
+	var fakeClient *fakes.FakeClient
+	var fakeSession *fakes.FakeISession
 	var session *consuladapter.Session
 	var newSessionErr error
 	var logger *lagertest.TestLogger
@@ -29,15 +30,15 @@ var _ = Describe("Session", func() {
 		logger = lagertest.NewTestLogger("test")
 
 		client = clusterRunner.NewClient()
-		sessionMgr = newFakeSessionManager(client)
+		fakeClient, _, fakeSession = newFakeClient(client)
 		noChecks = false
 	})
 
 	JustBeforeEach(func() {
 		if noChecks {
-			session, newSessionErr = consuladapter.NewSessionNoChecks("a-session", 20*time.Second, client, sessionMgr)
+			session, newSessionErr = consuladapter.NewSessionNoChecks("a-session", 20*time.Second, fakeClient)
 		} else {
-			session, newSessionErr = consuladapter.NewSession("a-session", 20*time.Second, client, sessionMgr)
+			session, newSessionErr = consuladapter.NewSession("a-session", 20*time.Second, fakeClient)
 		}
 	})
 
@@ -167,8 +168,8 @@ var _ = Describe("Session", func() {
 			})
 
 			It("destroys the session", func() {
-				Expect(sessionMgr.DestroyCallCount()).To(Equal(1))
-				id, _ := sessionMgr.DestroyArgsForCall(0)
+				Expect(fakeSession.DestroyCallCount()).To(Equal(1))
+				id, _ := fakeSession.DestroyArgsForCall(0)
 				Expect(id).To(Equal(session.ID()))
 			})
 

@@ -63,3 +63,18 @@ func newFakeSessionManager(client *api.Client) *fakes.FakeSessionManager {
 	sessionMgr.NewLockStub = realSM.NewLock
 	return sessionMgr
 }
+
+func newFakeClient(realClient *api.Client) (*fakes.FakeClient, *fakes.FakeAgent, *fakes.FakeISession) {
+	client, agent, session := fakes.NewFakeClient()
+	agent.NodeNameStub = realClient.Agent().NodeName
+	session.NodeStub = realClient.Session().Node
+	session.CreateStub = realClient.Session().Create
+	session.CreateNoChecksStub = realClient.Session().CreateNoChecks
+	session.DestroyStub = realClient.Session().Destroy
+	session.RenewStub = realClient.Session().Renew
+	session.RenewPeriodicStub = realClient.Session().RenewPeriodic
+	client.LockOptsStub = func(opts *api.LockOptions) (consuladapter.Lock, error) {
+		return realClient.LockOpts(opts)
+	}
+	return client, agent, session
+}

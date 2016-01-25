@@ -5,20 +5,36 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry-incubator/consuladapter"
+	"github.com/hashicorp/consul/api"
 )
 
 type FakeClient struct {
 	AgentStub        func() consuladapter.Agent
 	agentMutex       sync.RWMutex
 	agentArgsForCall []struct{}
-	agentReturns struct {
+	agentReturns     struct {
 		result1 consuladapter.Agent
 	}
 	SessionStub        func() consuladapter.ISession
 	sessionMutex       sync.RWMutex
 	sessionArgsForCall []struct{}
-	sessionReturns struct {
+	sessionReturns     struct {
 		result1 consuladapter.ISession
+	}
+	KVStub        func() consuladapter.KV
+	kVMutex       sync.RWMutex
+	kVArgsForCall []struct{}
+	kVReturns     struct {
+		result1 consuladapter.KV
+	}
+	LockOptsStub        func(opts *api.LockOptions) (consuladapter.Lock, error)
+	lockOptsMutex       sync.RWMutex
+	lockOptsArgsForCall []struct {
+		opts *api.LockOptions
+	}
+	lockOptsReturns struct {
+		result1 consuladapter.Lock
+		result2 error
 	}
 }
 
@@ -68,6 +84,63 @@ func (fake *FakeClient) SessionReturns(result1 consuladapter.ISession) {
 	fake.sessionReturns = struct {
 		result1 consuladapter.ISession
 	}{result1}
+}
+
+func (fake *FakeClient) KV() consuladapter.KV {
+	fake.kVMutex.Lock()
+	fake.kVArgsForCall = append(fake.kVArgsForCall, struct{}{})
+	fake.kVMutex.Unlock()
+	if fake.KVStub != nil {
+		return fake.KVStub()
+	} else {
+		return fake.kVReturns.result1
+	}
+}
+
+func (fake *FakeClient) KVCallCount() int {
+	fake.kVMutex.RLock()
+	defer fake.kVMutex.RUnlock()
+	return len(fake.kVArgsForCall)
+}
+
+func (fake *FakeClient) KVReturns(result1 consuladapter.KV) {
+	fake.KVStub = nil
+	fake.kVReturns = struct {
+		result1 consuladapter.KV
+	}{result1}
+}
+
+func (fake *FakeClient) LockOpts(opts *api.LockOptions) (consuladapter.Lock, error) {
+	fake.lockOptsMutex.Lock()
+	fake.lockOptsArgsForCall = append(fake.lockOptsArgsForCall, struct {
+		opts *api.LockOptions
+	}{opts})
+	fake.lockOptsMutex.Unlock()
+	if fake.LockOptsStub != nil {
+		return fake.LockOptsStub(opts)
+	} else {
+		return fake.lockOptsReturns.result1, fake.lockOptsReturns.result2
+	}
+}
+
+func (fake *FakeClient) LockOptsCallCount() int {
+	fake.lockOptsMutex.RLock()
+	defer fake.lockOptsMutex.RUnlock()
+	return len(fake.lockOptsArgsForCall)
+}
+
+func (fake *FakeClient) LockOptsArgsForCall(i int) *api.LockOptions {
+	fake.lockOptsMutex.RLock()
+	defer fake.lockOptsMutex.RUnlock()
+	return fake.lockOptsArgsForCall[i].opts
+}
+
+func (fake *FakeClient) LockOptsReturns(result1 consuladapter.Lock, result2 error) {
+	fake.LockOptsStub = nil
+	fake.lockOptsReturns = struct {
+		result1 consuladapter.Lock
+		result2 error
+	}{result1, result2}
 }
 
 var _ consuladapter.Client = new(FakeClient)

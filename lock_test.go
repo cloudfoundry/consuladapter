@@ -16,14 +16,16 @@ import (
 
 var _ = Describe("Locks and Presence", func() {
 	var client *api.Client
-	var sessionMgr *fakes.FakeSessionManager
+	var fakeAgent *fakes.FakeAgent
+	var fakeClient *fakes.FakeClient
+	var fakeSession *fakes.FakeISession
 	var sessionErr error
 	var noChecks bool
 
 	BeforeEach(func() {
 		startCluster()
 		client = clusterRunner.NewClient()
-		sessionMgr = newFakeSessionManager(client)
+		fakeClient, fakeAgent, fakeSession = newFakeClient(client)
 		noChecks = false
 	})
 
@@ -31,9 +33,9 @@ var _ = Describe("Locks and Presence", func() {
 
 	JustBeforeEach(func() {
 		if noChecks {
-			session, sessionErr = consuladapter.NewSessionNoChecks("a-session", 20*time.Second, client, sessionMgr)
+			session, sessionErr = consuladapter.NewSessionNoChecks("a-session", 20*time.Second, fakeClient)
 		} else {
-			session, sessionErr = consuladapter.NewSession("a-session", 20*time.Second, client, sessionMgr)
+			session, sessionErr = consuladapter.NewSession("a-session", 20*time.Second, fakeClient)
 		}
 	})
 
@@ -58,38 +60,37 @@ var _ = Describe("Locks and Presence", func() {
 		})
 
 		It("renews the session periodically", func() {
-			Eventually(sessionMgr.RenewPeriodicCallCount).ShouldNot(Equal(0))
+			Eventually(fakeSession.RenewPeriodicCallCount).ShouldNot(Equal(0))
 		})
 
 		Context("when NodeName() fails", func() {
 			BeforeEach(func() {
-				sessionMgr.NodeNameReturns("", errors.New("nodename failed"))
+				fakeAgent.NodeNameReturns("", errors.New("nodename failed"))
 			})
 
 			It("returns an error", func() {
-				Expect(operationErr().Error()).To(Equal("nodename failed"))
+				Expect(operationErr()).To(MatchError("nodename failed"))
 			})
 		})
 
 		Context("when retrieving the node sessions fail", func() {
 			BeforeEach(func() {
-				sessionMgr.NodeReturns(nil, nil, errors.New("session list failed"))
+				fakeSession.NodeReturns(nil, nil, errors.New("session list failed"))
 			})
 
 			It("returns an error", func() {
-				Expect(operationErr().Error()).To(Equal("session list failed"))
+				Expect(operationErr()).To(MatchError("session list failed"))
 			})
 		})
 
 		Context("when Create fails", func() {
 			BeforeEach(func() {
-				sessionMgr.CreateReturns("", nil, errors.New("create failed"))
-				sessionMgr.CreateNoChecksReturns("", nil, errors.New("create failed"))
+				fakeSession.CreateReturns("", nil, errors.New("create failed"))
+				fakeSession.CreateNoChecksReturns("", nil, errors.New("create failed"))
 			})
 
 			It("returns an error", func() {
-				Expect(operationErr()).To(HaveOccurred())
-				Expect(operationErr().Error()).To(Equal("create failed"))
+				Expect(operationErr()).To(MatchError("create failed"))
 			})
 		})
 	}
@@ -127,7 +128,7 @@ var _ = Describe("Locks and Presence", func() {
 				BeforeEach(func() {
 					lock := &fakes.FakeLock{}
 					lock.LockReturns(nil, nil)
-					sessionMgr.NewLockReturns(lock, nil)
+					fakeClient.LockOptsReturns(lock, nil)
 				})
 
 				It("returns an error", func() {
@@ -164,7 +165,7 @@ var _ = Describe("Locks and Presence", func() {
 
 			Context("with another session", func() {
 				It("acquires the lock when released", func() {
-					bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
+					bsession, err := consuladapter.NewSession("b-session", 20*time.Second, fakeClient)
 					Expect(err).NotTo(HaveOccurred())
 					defer bsession.Destroy()
 
@@ -194,7 +195,7 @@ var _ = Describe("Locks and Presence", func() {
 
 				Context("when acquiring a lock", func() {
 					It("fails", func() {
-						bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
+						bsession, err := consuladapter.NewSession("b-session", 20*time.Second, fakeClient)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = bsession.AcquireLock(lockKey, lockValue)
@@ -205,8 +206,8 @@ var _ = Describe("Locks and Presence", func() {
 
 			Context("and consul goes down during a renew", func() {
 				BeforeEach(func() {
-					oldStub := sessionMgr.RenewPeriodicStub
-					sessionMgr.RenewPeriodicStub = func(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error {
+					oldStub := fakeSession.RenewPeriodicStub
+					fakeSession.RenewPeriodicStub = func(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error {
 						stopCluster()
 						return oldStub("1s", id, q, doneCh)
 					}
@@ -280,17 +281,18 @@ var _ = Describe("Locks and Presence", func() {
 			BeforeEach(func() {
 				lock := &fakes.FakeLock{}
 				lock.LockReturns(nil, nil)
-				sessionMgr.NewLockReturns(lock, nil)
+				fakeClient.LockOptsReturns(lock, nil)
 			})
 
 			It("returns an error", func() {
+				Eventually(fakeClient.LockOptsCallCount).Should(Equal(1))
 				Expect(presenceErr).To(Equal(consuladapter.ErrCancelled))
 			})
 		})
 
 		Context("with another session", func() {
 			It("acquires the lock when released", func() {
-				bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
+				bsession, err := consuladapter.NewSession("b-session", 20*time.Second, fakeClient)
 				Expect(err).NotTo(HaveOccurred())
 				defer bsession.Destroy()
 
@@ -321,7 +323,7 @@ var _ = Describe("Locks and Presence", func() {
 
 			Context("when setting presence", func() {
 				It("fails", func() {
-					bsession, err := consuladapter.NewSession("b-session", 20*time.Second, client, sessionMgr)
+					bsession, err := consuladapter.NewSession("b-session", 20*time.Second, fakeClient)
 					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bsession.SetPresence(presenceKey, presenceValue)
@@ -332,8 +334,8 @@ var _ = Describe("Locks and Presence", func() {
 
 		Context("and consul goes down during a renew", func() {
 			BeforeEach(func() {
-				oldStub := sessionMgr.RenewPeriodicStub
-				sessionMgr.RenewPeriodicStub = func(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error {
+				oldStub := fakeSession.RenewPeriodicStub
+				fakeSession.RenewPeriodicStub = func(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error {
 					stopCluster()
 					return oldStub("500ms", id, q, doneCh)
 				}

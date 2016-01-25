@@ -21,12 +21,11 @@ var ErrDestroyed = errors.New("already destroyed")
 var ErrCancelled = errors.New("cancelled")
 
 type Session struct {
-	client *api.Client
+	client Client
 
-	name       string
-	sessionMgr SessionManager
-	ttl        time.Duration
-	noChecks   bool
+	name     string
+	ttl      time.Duration
+	noChecks bool
 
 	errCh chan error
 
@@ -37,26 +36,25 @@ type Session struct {
 	lostLock  string
 }
 
-func NewSession(sessionName string, ttl time.Duration, client *api.Client, sessionMgr SessionManager) (*Session, error) {
-	return newSession(sessionName, ttl, false, client, sessionMgr)
+func NewSession(sessionName string, ttl time.Duration, client Client) (*Session, error) {
+	return newSession(sessionName, ttl, false, client)
 }
 
-func NewSessionNoChecks(sessionName string, ttl time.Duration, client *api.Client, sessionMgr SessionManager) (*Session, error) {
-	return newSession(sessionName, ttl, true, client, sessionMgr)
+func NewSessionNoChecks(sessionName string, ttl time.Duration, client Client) (*Session, error) {
+	return newSession(sessionName, ttl, true, client)
 }
 
-func newSession(sessionName string, ttl time.Duration, noChecks bool, client *api.Client, sessionMgr SessionManager) (*Session, error) {
+func newSession(sessionName string, ttl time.Duration, noChecks bool, client Client) (*Session, error) {
 	doneCh := make(chan struct{}, 1)
 	errCh := make(chan error, 1)
 
 	s := &Session{
-		client:     client,
-		name:       sessionName,
-		sessionMgr: sessionMgr,
-		ttl:        ttl,
-		noChecks:   noChecks,
-		doneCh:     doneCh,
-		errCh:      errCh,
+		client:   client,
+		name:     sessionName,
+		ttl:      ttl,
+		noChecks: noChecks,
+		doneCh:   doneCh,
+		errCh:    errCh,
 	}
 
 	return s, nil
@@ -84,7 +82,7 @@ func (s *Session) destroy() {
 		close(s.doneCh)
 
 		if s.id != "" {
-			s.sessionMgr.Destroy(s.id, nil)
+			s.client.Session().Destroy(s.id, nil)
 		}
 
 		s.destroyed = true
@@ -108,7 +106,7 @@ func (s *Session) createSession() error {
 		LockDelay: 1 * time.Nanosecond,
 	}
 
-	id, renewTTL, err := create(se, s.noChecks, s.sessionMgr)
+	id, renewTTL, err := create(se, s.noChecks, s.client)
 	if err != nil {
 		return err
 	}
@@ -116,7 +114,7 @@ func (s *Session) createSession() error {
 	s.id = id
 
 	go func() {
-		err := s.sessionMgr.RenewPeriodic(renewTTL, id, nil, s.doneCh)
+		err := s.client.Session().RenewPeriodic(renewTTL, id, nil, s.doneCh)
 		s.lock.Lock()
 		lostLock := s.lostLock
 		s.destroy()
@@ -137,7 +135,7 @@ func (s *Session) Recreate() (*Session, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	session, err := newSession(s.name, s.ttl, s.noChecks, s.client, s.sessionMgr)
+	session, err := newSession(s.name, s.ttl, s.noChecks, s.client)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +156,13 @@ func (s *Session) AcquireLock(key string, value []byte) error {
 		return err
 	}
 
-	lock, err := s.sessionMgr.NewLock(s.id, key, value)
+	lockOptions := api.LockOptions{
+		Key:     key,
+		Value:   value,
+		Session: s.id,
+	}
+
+	lock, err := s.client.LockOpts(&lockOptions)
 	if err != nil {
 		return convertError(err)
 	}
@@ -193,7 +197,13 @@ func (s *Session) SetPresence(key string, value []byte) (<-chan string, error) {
 		return nil, err
 	}
 
-	lock, err := s.sessionMgr.NewLock(s.id, key, value)
+	lockOptions := api.LockOptions{
+		Key:     key,
+		Value:   value,
+		Session: s.id,
+	}
+
+	lock, err := s.client.LockOpts(&lockOptions)
 	if err != nil {
 		return nil, convertError(err)
 	}
@@ -218,13 +228,16 @@ func (s *Session) SetPresence(key string, value []byte) (<-chan string, error) {
 	return presenceLost, nil
 }
 
-func create(se *api.SessionEntry, noChecks bool, sessionMgr SessionManager) (string, string, error) {
-	nodeName, err := sessionMgr.NodeName()
+func create(se *api.SessionEntry, noChecks bool, client Client) (string, string, error) {
+	session := client.Session()
+	agent := client.Agent()
+
+	nodeName, err := agent.NodeName()
 	if err != nil {
 		return "", "", err
 	}
 
-	nodeSessions, _, err := sessionMgr.Node(nodeName, nil)
+	nodeSessions, _, err := session.Node(nodeName, nil)
 	if err != nil {
 		return "", "", err
 	}
@@ -232,7 +245,7 @@ func create(se *api.SessionEntry, noChecks bool, sessionMgr SessionManager) (str
 	sessions := findSessions(se.Name, nodeSessions)
 	if sessions != nil {
 		for _, s := range sessions {
-			_, err = sessionMgr.Destroy(s.ID, nil)
+			_, err = session.Destroy(s.ID, nil)
 			if err != nil {
 				return "", "", err
 			}
@@ -241,9 +254,9 @@ func create(se *api.SessionEntry, noChecks bool, sessionMgr SessionManager) (str
 
 	var f func(*api.SessionEntry, *api.WriteOptions) (string, *api.WriteMeta, error)
 	if noChecks {
-		f = sessionMgr.CreateNoChecks
+		f = session.CreateNoChecks
 	} else {
-		f = sessionMgr.Create
+		f = session.Create
 	}
 
 	id, _, err := f(se, nil)

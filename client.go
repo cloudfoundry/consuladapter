@@ -7,6 +7,8 @@ import "github.com/hashicorp/consul/api"
 type Client interface {
 	Agent() Agent
 	Session() ISession
+	KV() KV
+	LockOpts(opts *api.LockOptions) (Lock, error)
 }
 
 //go:generate counterfeiter -o fakes/fake_agent.go . Agent
@@ -19,6 +21,7 @@ type Agent interface {
 	PassTTL(checkID, note string) error
 	WarnTTL(checkID, note string) error
 	FailTTL(checkID, note string) error
+	NodeName() (string, error)
 }
 
 //go:generate counterfeiter -o fakes/fake_isession.go . ISession
@@ -36,6 +39,14 @@ type ISession interface {
 	RenewPeriodic(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error
 }
 
+//go:generate counterfeiter -o fakes/fake_kv.go . KV
+
+type KV interface {
+	Get(key string, q *api.QueryOptions) (*api.KVPair, *api.QueryMeta, error)
+	List(prefix string, q *api.QueryOptions) (api.KVPairs, *api.QueryMeta, error)
+	Put(p *api.KVPair, q *api.WriteOptions) (*api.WriteMeta, error)
+}
+
 type client struct {
 	client *api.Client
 }
@@ -48,8 +59,76 @@ func (c *client) Agent() Agent {
 	return NewConsulAgent(c.client.Agent())
 }
 
+func (c *client) KV() KV {
+	return NewConsulKV(c.client.KV())
+}
+
 func (c *client) Session() ISession {
 	return NewConsulSession(c.client.Session())
+}
+
+func (c *client) LockOpts(opts *api.LockOptions) (Lock, error) {
+	return c.client.LockOpts(opts)
+}
+
+type agent struct {
+	agent *api.Agent
+}
+
+func NewConsulAgent(a *api.Agent) Agent {
+	return &agent{agent: a}
+}
+
+func (a *agent) Checks() (map[string]*api.AgentCheck, error) {
+	return a.agent.Checks()
+}
+
+func (a *agent) Services() (map[string]*api.AgentService, error) {
+	return a.agent.Services()
+}
+
+func (a *agent) ServiceRegister(service *api.AgentServiceRegistration) error {
+	return a.agent.ServiceRegister(service)
+}
+
+func (a *agent) ServiceDeregister(serviceID string) error {
+	return a.agent.ServiceDeregister(serviceID)
+}
+
+func (a *agent) PassTTL(checkID, note string) error {
+	return a.agent.PassTTL(checkID, note)
+}
+
+func (a *agent) WarnTTL(checkID, note string) error {
+	return a.agent.WarnTTL(checkID, note)
+}
+
+func (a *agent) FailTTL(checkID, note string) error {
+	return a.agent.FailTTL(checkID, note)
+}
+
+func (a *agent) NodeName() (string, error) {
+	return a.agent.NodeName()
+}
+
+type keyValue struct {
+	keyValue *api.KV
+}
+
+func NewConsulKV(kv *api.KV) KV {
+	return &keyValue{keyValue: kv}
+}
+
+func (kv *keyValue) Get(key string, q *api.QueryOptions) (*api.KVPair, *api.QueryMeta, error) {
+	return kv.keyValue.Get(key, q)
+}
+
+func (kv *keyValue) List(prefix string, q *api.QueryOptions) (api.KVPairs, *api.QueryMeta, error) {
+	return kv.keyValue.List(prefix, q)
+}
+
+func (kv *keyValue) Put(p *api.KVPair, q *api.WriteOptions) (*api.WriteMeta, error) {
+	return kv.keyValue.Put(p, q)
 }
 
 type session struct {
@@ -90,40 +169,4 @@ func (s *session) Renew(id string, q *api.WriteOptions) (*api.SessionEntry, *api
 
 func (s *session) RenewPeriodic(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error {
 	return s.session.RenewPeriodic(initialTTL, id, q, doneCh)
-}
-
-type agent struct {
-	agent *api.Agent
-}
-
-func NewConsulAgent(a *api.Agent) Agent {
-	return &agent{agent: a}
-}
-
-func (a *agent) Checks() (map[string]*api.AgentCheck, error) {
-	return a.agent.Checks()
-}
-
-func (a *agent) Services() (map[string]*api.AgentService, error) {
-	return a.agent.Services()
-}
-
-func (a *agent) ServiceRegister(service *api.AgentServiceRegistration) error {
-	return a.agent.ServiceRegister(service)
-}
-
-func (a *agent) ServiceDeregister(serviceID string) error {
-	return a.agent.ServiceDeregister(serviceID)
-}
-
-func (a *agent) PassTTL(checkID, note string) error {
-	return a.agent.PassTTL(checkID, note)
-}
-
-func (a *agent) WarnTTL(checkID, note string) error {
-	return a.agent.WarnTTL(checkID, note)
-}
-
-func (a *agent) FailTTL(checkID, note string) error {
-	return a.agent.FailTTL(checkID, note)
 }

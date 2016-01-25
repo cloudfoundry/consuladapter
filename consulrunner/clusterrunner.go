@@ -176,7 +176,7 @@ func (cr *ClusterRunner) URL() string {
 
 func (cr *ClusterRunner) NewSession(sessionName string) *consuladapter.Session {
 	client := cr.NewClient()
-	adapter, err := consuladapter.NewSession(sessionName, 10*time.Second, client, consuladapter.NewSessionManager(client))
+	adapter, err := consuladapter.NewSession(sessionName, 10*time.Second, consuladapter.NewConsulClient(client))
 	Expect(err).NotTo(HaveOccurred())
 
 	return adapter
