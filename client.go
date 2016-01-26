@@ -11,6 +11,12 @@ type Client interface {
 	LockOpts(opts *api.LockOptions) (Lock, error)
 }
 
+//go:generate counterfeiter -o fakes/fake_lock.go . Lock
+
+type Lock interface {
+	Lock(stopCh <-chan struct{}) (lostLock <-chan struct{}, err error)
+}
+
 //go:generate counterfeiter -o fakes/fake_agent.go . Agent
 
 type Agent interface {
@@ -45,6 +51,7 @@ type KV interface {
 	Get(key string, q *api.QueryOptions) (*api.KVPair, *api.QueryMeta, error)
 	List(prefix string, q *api.QueryOptions) (api.KVPairs, *api.QueryMeta, error)
 	Put(p *api.KVPair, q *api.WriteOptions) (*api.WriteMeta, error)
+	Release(p *api.KVPair, q *api.WriteOptions) (bool, *api.WriteMeta, error)
 }
 
 type client struct {
@@ -129,6 +136,10 @@ func (kv *keyValue) List(prefix string, q *api.QueryOptions) (api.KVPairs, *api.
 
 func (kv *keyValue) Put(p *api.KVPair, q *api.WriteOptions) (*api.WriteMeta, error) {
 	return kv.keyValue.Put(p, q)
+}
+
+func (kv *keyValue) Release(p *api.KVPair, q *api.WriteOptions) (bool, *api.WriteMeta, error) {
+	return kv.keyValue.Release(p, q)
 }
 
 type session struct {

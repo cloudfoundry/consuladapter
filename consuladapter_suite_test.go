@@ -50,31 +50,24 @@ func startCluster() {
 	clusterRunner.WaitUntilReady()
 }
 
-func newFakeSessionManager(client *api.Client) *fakes.FakeSessionManager {
-	sessionMgr := &fakes.FakeSessionManager{}
-	realSM := consuladapter.NewSessionManager(client)
-	sessionMgr.NodeNameStub = realSM.NodeName
-	sessionMgr.NodeStub = realSM.Node
-	sessionMgr.CreateStub = realSM.Create
-	sessionMgr.CreateNoChecksStub = realSM.CreateNoChecks
-	sessionMgr.DestroyStub = realSM.Destroy
-	sessionMgr.RenewStub = realSM.Renew
-	sessionMgr.RenewPeriodicStub = realSM.RenewPeriodic
-	sessionMgr.NewLockStub = realSM.NewLock
-	return sessionMgr
-}
-
-func newFakeClient(realClient *api.Client) (*fakes.FakeClient, *fakes.FakeAgent, *fakes.FakeISession) {
-	client, agent, session := fakes.NewFakeClient()
+func newFakeClient(realClient *api.Client) (*fakes.FakeClient, *fakes.FakeAgent, *fakes.FakeKV, *fakes.FakeISession) {
+	client, agent, kv, session := fakes.NewFakeClient()
 	agent.NodeNameStub = realClient.Agent().NodeName
+
+	kv.ReleaseStub = realClient.KV().Release
+	kv.GetStub = realClient.KV().Get
+	kv.ListStub = realClient.KV().List
+
 	session.NodeStub = realClient.Session().Node
 	session.CreateStub = realClient.Session().Create
 	session.CreateNoChecksStub = realClient.Session().CreateNoChecks
 	session.DestroyStub = realClient.Session().Destroy
 	session.RenewStub = realClient.Session().Renew
 	session.RenewPeriodicStub = realClient.Session().RenewPeriodic
+	session.ListStub = realClient.Session().List
+
 	client.LockOptsStub = func(opts *api.LockOptions) (consuladapter.Lock, error) {
 		return realClient.LockOpts(opts)
 	}
-	return client, agent, session
+	return client, agent, kv, session
 }

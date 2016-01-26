@@ -41,6 +41,17 @@ type FakeKV struct {
 		result1 *api.WriteMeta
 		result2 error
 	}
+	ReleaseStub        func(p *api.KVPair, q *api.WriteOptions) (bool, *api.WriteMeta, error)
+	releaseMutex       sync.RWMutex
+	releaseArgsForCall []struct {
+		p *api.KVPair
+		q *api.WriteOptions
+	}
+	releaseReturns struct {
+		result1 bool
+		result2 *api.WriteMeta
+		result3 error
+	}
 }
 
 func (fake *FakeKV) Get(key string, q *api.QueryOptions) (*api.KVPair, *api.QueryMeta, error) {
@@ -145,6 +156,41 @@ func (fake *FakeKV) PutReturns(result1 *api.WriteMeta, result2 error) {
 		result1 *api.WriteMeta
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeKV) Release(p *api.KVPair, q *api.WriteOptions) (bool, *api.WriteMeta, error) {
+	fake.releaseMutex.Lock()
+	fake.releaseArgsForCall = append(fake.releaseArgsForCall, struct {
+		p *api.KVPair
+		q *api.WriteOptions
+	}{p, q})
+	fake.releaseMutex.Unlock()
+	if fake.ReleaseStub != nil {
+		return fake.ReleaseStub(p, q)
+	} else {
+		return fake.releaseReturns.result1, fake.releaseReturns.result2, fake.releaseReturns.result3
+	}
+}
+
+func (fake *FakeKV) ReleaseCallCount() int {
+	fake.releaseMutex.RLock()
+	defer fake.releaseMutex.RUnlock()
+	return len(fake.releaseArgsForCall)
+}
+
+func (fake *FakeKV) ReleaseArgsForCall(i int) (*api.KVPair, *api.WriteOptions) {
+	fake.releaseMutex.RLock()
+	defer fake.releaseMutex.RUnlock()
+	return fake.releaseArgsForCall[i].p, fake.releaseArgsForCall[i].q
+}
+
+func (fake *FakeKV) ReleaseReturns(result1 bool, result2 *api.WriteMeta, result3 error) {
+	fake.ReleaseStub = nil
+	fake.releaseReturns = struct {
+		result1 bool
+		result2 *api.WriteMeta
+		result3 error
+	}{result1, result2, result3}
 }
 
 var _ consuladapter.KV = new(FakeKV)

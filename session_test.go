@@ -18,7 +18,6 @@ var _ = Describe("Session", func() {
 	BeforeEach(startCluster)
 	AfterEach(stopCluster)
 
-	var client *api.Client
 	var fakeClient *fakes.FakeClient
 	var fakeSession *fakes.FakeISession
 	var session *consuladapter.Session
@@ -29,8 +28,8 @@ var _ = Describe("Session", func() {
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("test")
 
-		client = clusterRunner.NewClient()
-		fakeClient, _, fakeSession = newFakeClient(client)
+		client := clusterRunner.NewClient()
+		fakeClient, _, _, fakeSession = newFakeClient(client)
 		noChecks = false
 	})
 
@@ -70,7 +69,7 @@ var _ = Describe("Session", func() {
 			})
 
 			It("has checks", func() {
-				entries, _, err := client.Session().List(nil)
+				entries, _, err := fakeClient.Session().List(nil)
 				Expect(err).NotTo(HaveOccurred())
 				session := findSession(session.ID(), entries)
 				Expect(session.Checks).To(ConsistOf(serfCheckID))
@@ -82,7 +81,7 @@ var _ = Describe("Session", func() {
 				})
 
 				It("has no checks", func() {
-					entries, _, err := client.Session().List(nil)
+					entries, _, err := fakeClient.Session().List(nil)
 					Expect(err).NotTo(HaveOccurred())
 					session := findSession(session.ID(), entries)
 					Expect(session.Checks).To(BeEmpty())
@@ -107,14 +106,14 @@ var _ = Describe("Session", func() {
 
 				It("destroys the current session", func() {
 					Eventually(func() *api.SessionEntry {
-						entries, _, err := client.Session().List(nil)
+						entries, _, err := fakeClient.Session().List(nil)
 						Expect(err).NotTo(HaveOccurred())
 						return findSession(session.ID(), entries)
 					}).Should(BeNil())
 				})
 
 				It("has checks", func() {
-					entries, _, err := client.Session().List(nil)
+					entries, _, err := fakeClient.Session().List(nil)
 					Expect(err).NotTo(HaveOccurred())
 					s := findSession(newSession.ID(), entries)
 					Expect(s.Checks).To(ConsistOf(serfCheckID))
@@ -126,7 +125,7 @@ var _ = Describe("Session", func() {
 					})
 
 					It("has no checks", func() {
-						entries, _, err := client.Session().List(nil)
+						entries, _, err := fakeClient.Session().List(nil)
 						Expect(err).NotTo(HaveOccurred())
 						session := findSession(newSession.ID(), entries)
 						Expect(session.Checks).To(BeEmpty())
@@ -145,7 +144,7 @@ var _ = Describe("Session", func() {
 				})
 
 				It("has checks", func() {
-					entries, _, err := client.Session().List(nil)
+					entries, _, err := fakeClient.Session().List(nil)
 					Expect(err).NotTo(HaveOccurred())
 					s := findSession(newSession.ID(), entries)
 					Expect(s.Checks).To(ConsistOf(serfCheckID))
@@ -159,7 +158,7 @@ var _ = Describe("Session", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() []*api.SessionEntry {
-					entries, _, err := client.Session().List(nil)
+					entries, _, err := fakeClient.Session().List(nil)
 					Expect(err).NotTo(HaveOccurred())
 					return entries
 				}).Should(HaveLen(1))
@@ -175,7 +174,7 @@ var _ = Describe("Session", func() {
 
 			It("removes the session", func() {
 				Eventually(func() *api.SessionEntry {
-					entries, _, err := client.Session().List(nil)
+					entries, _, err := fakeClient.Session().List(nil)
 					Expect(err).NotTo(HaveOccurred())
 					return findSession(session.ID(), entries)
 				}).Should(BeNil())

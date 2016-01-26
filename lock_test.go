@@ -15,7 +15,6 @@ import (
 )
 
 var _ = Describe("Locks and Presence", func() {
-	var client *api.Client
 	var fakeAgent *fakes.FakeAgent
 	var fakeClient *fakes.FakeClient
 	var fakeSession *fakes.FakeISession
@@ -24,8 +23,8 @@ var _ = Describe("Locks and Presence", func() {
 
 	BeforeEach(func() {
 		startCluster()
-		client = clusterRunner.NewClient()
-		fakeClient, fakeAgent, fakeSession = newFakeClient(client)
+		client := clusterRunner.NewClient()
+		fakeClient, fakeAgent, _, fakeSession = newFakeClient(client)
 		noChecks = false
 	})
 
@@ -48,7 +47,7 @@ var _ = Describe("Locks and Presence", func() {
 	sessionCreationTests := func(operationErr func() error) {
 
 		It("is set with the expected defaults", func() {
-			entries, _, err := client.Session().List(nil)
+			entries, _, err := fakeClient.Session().List(nil)
 			Expect(err).NotTo(HaveOccurred())
 			entry := findSession(session.ID(), entries)
 			Expect(entry).NotTo(BeNil())
@@ -110,14 +109,14 @@ var _ = Describe("Locks and Presence", func() {
 			It("creates acquired key/value", func() {
 				Expect(lockErr).NotTo(HaveOccurred())
 
-				kvpair, _, err := client.KV().Get(lockKey, nil)
+				kvpair, _, err := fakeClient.KV().Get(lockKey, nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(kvpair.Session).To(Equal(session.ID()))
 				Expect(kvpair.Value).To(Equal(lockValue))
 			})
 
 			It("destroys the session when the lock is lost", func() {
-				ok, _, err := client.KV().Release(&api.KVPair{Key: lockKey, Session: session.ID()}, nil)
+				ok, _, err := fakeClient.KV().Release(&api.KVPair{Key: lockKey, Session: session.ID()}, nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(ok).To(BeTrue())
 
@@ -180,7 +179,7 @@ var _ = Describe("Locks and Presence", func() {
 					session.Destroy()
 
 					Eventually(errChan, api.DefaultLockRetryTime*2).Should(Receive(BeNil()))
-					kvpair, _, err := client.KV().Get(lockKey, nil)
+					kvpair, _, err := fakeClient.KV().Get(lockKey, nil)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(kvpair.Session).To(Equal(bsession.ID()))
 				})
@@ -262,14 +261,14 @@ var _ = Describe("Locks and Presence", func() {
 		It("creates an acquired key/value", func() {
 			Expect(presenceErr).NotTo(HaveOccurred())
 
-			kvpair, _, err := client.KV().Get(presenceKey, nil)
+			kvpair, _, err := fakeClient.KV().Get(presenceKey, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kvpair.Session).To(Equal(session.ID()))
 			Expect(kvpair.Value).To(Equal(presenceValue))
 		})
 
 		It("the session remains when the presence is lost", func() {
-			ok, _, err := client.KV().Release(&api.KVPair{Key: presenceKey, Session: session.ID()}, nil)
+			ok, _, err := fakeClient.KV().Release(&api.KVPair{Key: presenceKey, Session: session.ID()}, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ok).To(BeTrue())
 
@@ -308,7 +307,7 @@ var _ = Describe("Locks and Presence", func() {
 				session.Destroy()
 
 				Eventually(errChan, api.DefaultLockRetryTime*2).Should(Receive(BeNil()))
-				kvpair, _, err := client.KV().Get(presenceKey, nil)
+				kvpair, _, err := fakeClient.KV().Get(presenceKey, nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(kvpair.Session).To(Equal(bsession.ID()))
 			})
