@@ -2,6 +2,7 @@ package consuladapter_test
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/cloudfoundry-incubator/consuladapter/consulrunner"
@@ -42,7 +43,11 @@ func stopClusterAndSession() {
 
 func startClusterAndSession() {
 	startCluster()
-	session = clusterRunner.NewSession(fmt.Sprintf("session-%d", config.GinkgoConfig.ParallelNode))
+	client := clusterRunner.NewClient()
+
+	var err error
+	session, err = consuladapter.NewSession(fmt.Sprintf("session-%d", config.GinkgoConfig.ParallelNode), 10*time.Second, consuladapter.NewConsulClient(client))
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func startCluster() {

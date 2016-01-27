@@ -182,19 +182,6 @@ func (cr *ClusterRunner) NewSession(sessionName string) *consuladapter.Session {
 	return adapter
 }
 
-func (cr *ClusterRunner) DestroySession(sessionName string) {
-	session := cr.NewClient().Session()
-	sessions, _, err := session.List(nil)
-	Expect(err).NotTo(HaveOccurred())
-
-	for _, sess := range sessions {
-		if sess.Name == sessionName {
-			_, err := session.Destroy(sess.ID, nil)
-			Expect(err).NotTo(HaveOccurred())
-		}
-	}
-}
-
 func (cr *ClusterRunner) Reset() error {
 	client := cr.NewClient()
 

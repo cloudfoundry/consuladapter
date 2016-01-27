@@ -15,26 +15,6 @@ func (s *Session) GetAcquiredValue(key string) ([]byte, error) {
 	return kvPair.Value, nil
 }
 
-func (s *Session) ListAcquiredValues(prefix string) (map[string][]byte, error) {
-	kvPairs, _, err := s.client.KV().List(prefix, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if kvPairs == nil {
-		return nil, NewPrefixNotFoundError(prefix)
-	}
-
-	children := map[string][]byte{}
-	for _, kvPair := range kvPairs {
-		if kvPair.Session != "" {
-			children[kvPair.Key] = kvPair.Value
-		}
-	}
-
-	return children, nil
-}
-
 func NewKeyNotFoundError(key string) error {
 	return KeyNotFoundError(key)
 }
