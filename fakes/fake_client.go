@@ -15,11 +15,11 @@ type FakeClient struct {
 	agentReturns     struct {
 		result1 consuladapter.Agent
 	}
-	SessionStub        func() consuladapter.ISession
+	SessionStub        func() consuladapter.Session
 	sessionMutex       sync.RWMutex
 	sessionArgsForCall []struct{}
 	sessionReturns     struct {
-		result1 consuladapter.ISession
+		result1 consuladapter.Session
 	}
 	KVStub        func() consuladapter.KV
 	kVMutex       sync.RWMutex
@@ -62,7 +62,7 @@ func (fake *FakeClient) AgentReturns(result1 consuladapter.Agent) {
 	}{result1}
 }
 
-func (fake *FakeClient) Session() consuladapter.ISession {
+func (fake *FakeClient) Session() consuladapter.Session {
 	fake.sessionMutex.Lock()
 	fake.sessionArgsForCall = append(fake.sessionArgsForCall, struct{}{})
 	fake.sessionMutex.Unlock()
@@ -79,10 +79,10 @@ func (fake *FakeClient) SessionCallCount() int {
 	return len(fake.sessionArgsForCall)
 }
 
-func (fake *FakeClient) SessionReturns(result1 consuladapter.ISession) {
+func (fake *FakeClient) SessionReturns(result1 consuladapter.Session) {
 	fake.SessionStub = nil
 	fake.sessionReturns = struct {
-		result1 consuladapter.ISession
+		result1 consuladapter.Session
 	}{result1}
 }
 

@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
-type FakeISession struct {
+type FakeSession struct {
 	CreateStub        func(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error)
 	createMutex       sync.RWMutex
 	createArgsForCall []struct {
@@ -97,7 +97,7 @@ type FakeISession struct {
 	}
 }
 
-func (fake *FakeISession) Create(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error) {
+func (fake *FakeSession) Create(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error) {
 	fake.createMutex.Lock()
 	fake.createArgsForCall = append(fake.createArgsForCall, struct {
 		se *api.SessionEntry
@@ -111,19 +111,19 @@ func (fake *FakeISession) Create(se *api.SessionEntry, q *api.WriteOptions) (str
 	}
 }
 
-func (fake *FakeISession) CreateCallCount() int {
+func (fake *FakeSession) CreateCallCount() int {
 	fake.createMutex.RLock()
 	defer fake.createMutex.RUnlock()
 	return len(fake.createArgsForCall)
 }
 
-func (fake *FakeISession) CreateArgsForCall(i int) (*api.SessionEntry, *api.WriteOptions) {
+func (fake *FakeSession) CreateArgsForCall(i int) (*api.SessionEntry, *api.WriteOptions) {
 	fake.createMutex.RLock()
 	defer fake.createMutex.RUnlock()
 	return fake.createArgsForCall[i].se, fake.createArgsForCall[i].q
 }
 
-func (fake *FakeISession) CreateReturns(result1 string, result2 *api.WriteMeta, result3 error) {
+func (fake *FakeSession) CreateReturns(result1 string, result2 *api.WriteMeta, result3 error) {
 	fake.CreateStub = nil
 	fake.createReturns = struct {
 		result1 string
@@ -132,7 +132,7 @@ func (fake *FakeISession) CreateReturns(result1 string, result2 *api.WriteMeta, 
 	}{result1, result2, result3}
 }
 
-func (fake *FakeISession) CreateNoChecks(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error) {
+func (fake *FakeSession) CreateNoChecks(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error) {
 	fake.createNoChecksMutex.Lock()
 	fake.createNoChecksArgsForCall = append(fake.createNoChecksArgsForCall, struct {
 		se *api.SessionEntry
@@ -146,19 +146,19 @@ func (fake *FakeISession) CreateNoChecks(se *api.SessionEntry, q *api.WriteOptio
 	}
 }
 
-func (fake *FakeISession) CreateNoChecksCallCount() int {
+func (fake *FakeSession) CreateNoChecksCallCount() int {
 	fake.createNoChecksMutex.RLock()
 	defer fake.createNoChecksMutex.RUnlock()
 	return len(fake.createNoChecksArgsForCall)
 }
 
-func (fake *FakeISession) CreateNoChecksArgsForCall(i int) (*api.SessionEntry, *api.WriteOptions) {
+func (fake *FakeSession) CreateNoChecksArgsForCall(i int) (*api.SessionEntry, *api.WriteOptions) {
 	fake.createNoChecksMutex.RLock()
 	defer fake.createNoChecksMutex.RUnlock()
 	return fake.createNoChecksArgsForCall[i].se, fake.createNoChecksArgsForCall[i].q
 }
 
-func (fake *FakeISession) CreateNoChecksReturns(result1 string, result2 *api.WriteMeta, result3 error) {
+func (fake *FakeSession) CreateNoChecksReturns(result1 string, result2 *api.WriteMeta, result3 error) {
 	fake.CreateNoChecksStub = nil
 	fake.createNoChecksReturns = struct {
 		result1 string
@@ -167,7 +167,7 @@ func (fake *FakeISession) CreateNoChecksReturns(result1 string, result2 *api.Wri
 	}{result1, result2, result3}
 }
 
-func (fake *FakeISession) Destroy(id string, q *api.WriteOptions) (*api.WriteMeta, error) {
+func (fake *FakeSession) Destroy(id string, q *api.WriteOptions) (*api.WriteMeta, error) {
 	fake.destroyMutex.Lock()
 	fake.destroyArgsForCall = append(fake.destroyArgsForCall, struct {
 		id string
@@ -181,19 +181,19 @@ func (fake *FakeISession) Destroy(id string, q *api.WriteOptions) (*api.WriteMet
 	}
 }
 
-func (fake *FakeISession) DestroyCallCount() int {
+func (fake *FakeSession) DestroyCallCount() int {
 	fake.destroyMutex.RLock()
 	defer fake.destroyMutex.RUnlock()
 	return len(fake.destroyArgsForCall)
 }
 
-func (fake *FakeISession) DestroyArgsForCall(i int) (string, *api.WriteOptions) {
+func (fake *FakeSession) DestroyArgsForCall(i int) (string, *api.WriteOptions) {
 	fake.destroyMutex.RLock()
 	defer fake.destroyMutex.RUnlock()
 	return fake.destroyArgsForCall[i].id, fake.destroyArgsForCall[i].q
 }
 
-func (fake *FakeISession) DestroyReturns(result1 *api.WriteMeta, result2 error) {
+func (fake *FakeSession) DestroyReturns(result1 *api.WriteMeta, result2 error) {
 	fake.DestroyStub = nil
 	fake.destroyReturns = struct {
 		result1 *api.WriteMeta
@@ -201,7 +201,7 @@ func (fake *FakeISession) DestroyReturns(result1 *api.WriteMeta, result2 error) 
 	}{result1, result2}
 }
 
-func (fake *FakeISession) Info(id string, q *api.QueryOptions) (*api.SessionEntry, *api.QueryMeta, error) {
+func (fake *FakeSession) Info(id string, q *api.QueryOptions) (*api.SessionEntry, *api.QueryMeta, error) {
 	fake.infoMutex.Lock()
 	fake.infoArgsForCall = append(fake.infoArgsForCall, struct {
 		id string
@@ -215,19 +215,19 @@ func (fake *FakeISession) Info(id string, q *api.QueryOptions) (*api.SessionEntr
 	}
 }
 
-func (fake *FakeISession) InfoCallCount() int {
+func (fake *FakeSession) InfoCallCount() int {
 	fake.infoMutex.RLock()
 	defer fake.infoMutex.RUnlock()
 	return len(fake.infoArgsForCall)
 }
 
-func (fake *FakeISession) InfoArgsForCall(i int) (string, *api.QueryOptions) {
+func (fake *FakeSession) InfoArgsForCall(i int) (string, *api.QueryOptions) {
 	fake.infoMutex.RLock()
 	defer fake.infoMutex.RUnlock()
 	return fake.infoArgsForCall[i].id, fake.infoArgsForCall[i].q
 }
 
-func (fake *FakeISession) InfoReturns(result1 *api.SessionEntry, result2 *api.QueryMeta, result3 error) {
+func (fake *FakeSession) InfoReturns(result1 *api.SessionEntry, result2 *api.QueryMeta, result3 error) {
 	fake.InfoStub = nil
 	fake.infoReturns = struct {
 		result1 *api.SessionEntry
@@ -236,7 +236,7 @@ func (fake *FakeISession) InfoReturns(result1 *api.SessionEntry, result2 *api.Qu
 	}{result1, result2, result3}
 }
 
-func (fake *FakeISession) List(q *api.QueryOptions) ([]*api.SessionEntry, *api.QueryMeta, error) {
+func (fake *FakeSession) List(q *api.QueryOptions) ([]*api.SessionEntry, *api.QueryMeta, error) {
 	fake.listMutex.Lock()
 	fake.listArgsForCall = append(fake.listArgsForCall, struct {
 		q *api.QueryOptions
@@ -249,19 +249,19 @@ func (fake *FakeISession) List(q *api.QueryOptions) ([]*api.SessionEntry, *api.Q
 	}
 }
 
-func (fake *FakeISession) ListCallCount() int {
+func (fake *FakeSession) ListCallCount() int {
 	fake.listMutex.RLock()
 	defer fake.listMutex.RUnlock()
 	return len(fake.listArgsForCall)
 }
 
-func (fake *FakeISession) ListArgsForCall(i int) *api.QueryOptions {
+func (fake *FakeSession) ListArgsForCall(i int) *api.QueryOptions {
 	fake.listMutex.RLock()
 	defer fake.listMutex.RUnlock()
 	return fake.listArgsForCall[i].q
 }
 
-func (fake *FakeISession) ListReturns(result1 []*api.SessionEntry, result2 *api.QueryMeta, result3 error) {
+func (fake *FakeSession) ListReturns(result1 []*api.SessionEntry, result2 *api.QueryMeta, result3 error) {
 	fake.ListStub = nil
 	fake.listReturns = struct {
 		result1 []*api.SessionEntry
@@ -270,7 +270,7 @@ func (fake *FakeISession) ListReturns(result1 []*api.SessionEntry, result2 *api.
 	}{result1, result2, result3}
 }
 
-func (fake *FakeISession) Node(node string, q *api.QueryOptions) ([]*api.SessionEntry, *api.QueryMeta, error) {
+func (fake *FakeSession) Node(node string, q *api.QueryOptions) ([]*api.SessionEntry, *api.QueryMeta, error) {
 	fake.nodeMutex.Lock()
 	fake.nodeArgsForCall = append(fake.nodeArgsForCall, struct {
 		node string
@@ -284,19 +284,19 @@ func (fake *FakeISession) Node(node string, q *api.QueryOptions) ([]*api.Session
 	}
 }
 
-func (fake *FakeISession) NodeCallCount() int {
+func (fake *FakeSession) NodeCallCount() int {
 	fake.nodeMutex.RLock()
 	defer fake.nodeMutex.RUnlock()
 	return len(fake.nodeArgsForCall)
 }
 
-func (fake *FakeISession) NodeArgsForCall(i int) (string, *api.QueryOptions) {
+func (fake *FakeSession) NodeArgsForCall(i int) (string, *api.QueryOptions) {
 	fake.nodeMutex.RLock()
 	defer fake.nodeMutex.RUnlock()
 	return fake.nodeArgsForCall[i].node, fake.nodeArgsForCall[i].q
 }
 
-func (fake *FakeISession) NodeReturns(result1 []*api.SessionEntry, result2 *api.QueryMeta, result3 error) {
+func (fake *FakeSession) NodeReturns(result1 []*api.SessionEntry, result2 *api.QueryMeta, result3 error) {
 	fake.NodeStub = nil
 	fake.nodeReturns = struct {
 		result1 []*api.SessionEntry
@@ -305,7 +305,7 @@ func (fake *FakeISession) NodeReturns(result1 []*api.SessionEntry, result2 *api.
 	}{result1, result2, result3}
 }
 
-func (fake *FakeISession) Renew(id string, q *api.WriteOptions) (*api.SessionEntry, *api.WriteMeta, error) {
+func (fake *FakeSession) Renew(id string, q *api.WriteOptions) (*api.SessionEntry, *api.WriteMeta, error) {
 	fake.renewMutex.Lock()
 	fake.renewArgsForCall = append(fake.renewArgsForCall, struct {
 		id string
@@ -319,19 +319,19 @@ func (fake *FakeISession) Renew(id string, q *api.WriteOptions) (*api.SessionEnt
 	}
 }
 
-func (fake *FakeISession) RenewCallCount() int {
+func (fake *FakeSession) RenewCallCount() int {
 	fake.renewMutex.RLock()
 	defer fake.renewMutex.RUnlock()
 	return len(fake.renewArgsForCall)
 }
 
-func (fake *FakeISession) RenewArgsForCall(i int) (string, *api.WriteOptions) {
+func (fake *FakeSession) RenewArgsForCall(i int) (string, *api.WriteOptions) {
 	fake.renewMutex.RLock()
 	defer fake.renewMutex.RUnlock()
 	return fake.renewArgsForCall[i].id, fake.renewArgsForCall[i].q
 }
 
-func (fake *FakeISession) RenewReturns(result1 *api.SessionEntry, result2 *api.WriteMeta, result3 error) {
+func (fake *FakeSession) RenewReturns(result1 *api.SessionEntry, result2 *api.WriteMeta, result3 error) {
 	fake.RenewStub = nil
 	fake.renewReturns = struct {
 		result1 *api.SessionEntry
@@ -340,7 +340,7 @@ func (fake *FakeISession) RenewReturns(result1 *api.SessionEntry, result2 *api.W
 	}{result1, result2, result3}
 }
 
-func (fake *FakeISession) RenewPeriodic(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error {
+func (fake *FakeSession) RenewPeriodic(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error {
 	fake.renewPeriodicMutex.Lock()
 	fake.renewPeriodicArgsForCall = append(fake.renewPeriodicArgsForCall, struct {
 		initialTTL string
@@ -356,23 +356,23 @@ func (fake *FakeISession) RenewPeriodic(initialTTL string, id string, q *api.Wri
 	}
 }
 
-func (fake *FakeISession) RenewPeriodicCallCount() int {
+func (fake *FakeSession) RenewPeriodicCallCount() int {
 	fake.renewPeriodicMutex.RLock()
 	defer fake.renewPeriodicMutex.RUnlock()
 	return len(fake.renewPeriodicArgsForCall)
 }
 
-func (fake *FakeISession) RenewPeriodicArgsForCall(i int) (string, string, *api.WriteOptions, chan struct{}) {
+func (fake *FakeSession) RenewPeriodicArgsForCall(i int) (string, string, *api.WriteOptions, chan struct{}) {
 	fake.renewPeriodicMutex.RLock()
 	defer fake.renewPeriodicMutex.RUnlock()
 	return fake.renewPeriodicArgsForCall[i].initialTTL, fake.renewPeriodicArgsForCall[i].id, fake.renewPeriodicArgsForCall[i].q, fake.renewPeriodicArgsForCall[i].doneCh
 }
 
-func (fake *FakeISession) RenewPeriodicReturns(result1 error) {
+func (fake *FakeSession) RenewPeriodicReturns(result1 error) {
 	fake.RenewPeriodicStub = nil
 	fake.renewPeriodicReturns = struct {
 		result1 error
 	}{result1}
 }
 
-var _ consuladapter.ISession = new(FakeISession)
+var _ consuladapter.Session = new(FakeSession)

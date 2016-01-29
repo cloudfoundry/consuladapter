@@ -1,12 +1,16 @@
 package consuladapter
 
-import "github.com/hashicorp/consul/api"
+import (
+	"fmt"
+
+	"github.com/hashicorp/consul/api"
+)
 
 //go:generate counterfeiter -o fakes/fake_client.go . Client
 
 type Client interface {
 	Agent() Agent
-	Session() ISession
+	Session() Session
 	KV() KV
 	LockOpts(opts *api.LockOptions) (Lock, error)
 }
@@ -30,11 +34,9 @@ type Agent interface {
 	NodeName() (string, error)
 }
 
-//go:generate counterfeiter -o fakes/fake_isession.go . ISession
+//go:generate counterfeiter -o fakes/fake_session.go . Session
 
-// We need to rename this to Session once we fix the existing Session type in
-// this package
-type ISession interface {
+type Session interface {
 	Create(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error)
 	CreateNoChecks(se *api.SessionEntry, q *api.WriteOptions) (string, *api.WriteMeta, error)
 	Destroy(id string, q *api.WriteOptions) (*api.WriteMeta, error)
@@ -70,7 +72,7 @@ func (c *client) KV() KV {
 	return NewConsulKV(c.client.KV())
 }
 
-func (c *client) Session() ISession {
+func (c *client) Session() Session {
 	return NewConsulSession(c.client.Session())
 }
 
@@ -146,7 +148,7 @@ type session struct {
 	session *api.Session
 }
 
-func NewConsulSession(s *api.Session) ISession {
+func NewConsulSession(s *api.Session) Session {
 	return &session{session: s}
 }
 
@@ -180,4 +182,24 @@ func (s *session) Renew(id string, q *api.WriteOptions) (*api.SessionEntry, *api
 
 func (s *session) RenewPeriodic(initialTTL string, id string, q *api.WriteOptions, doneCh chan struct{}) error {
 	return s.session.RenewPeriodic(initialTTL, id, q, doneCh)
+}
+
+func NewKeyNotFoundError(key string) error {
+	return KeyNotFoundError(key)
+}
+
+type KeyNotFoundError string
+
+func (e KeyNotFoundError) Error() string {
+	return fmt.Sprintf("key not found: '%s'", string(e))
+}
+
+func NewPrefixNotFoundError(prefix string) error {
+	return PrefixNotFoundError(prefix)
+}
+
+type PrefixNotFoundError string
+
+func (e PrefixNotFoundError) Error() string {
+	return fmt.Sprintf("prefix not found: '%s'", string(e))
 }

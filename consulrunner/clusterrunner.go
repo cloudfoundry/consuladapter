@@ -174,14 +174,6 @@ func (cr *ClusterRunner) URL() string {
 	return fmt.Sprintf("%s://%s", cr.scheme, cr.Address())
 }
 
-func (cr *ClusterRunner) NewSession(sessionName string) *consuladapter.Session {
-	client := cr.NewClient()
-	adapter, err := consuladapter.NewSession(sessionName, 10*time.Second, consuladapter.NewConsulClient(client))
-	Expect(err).NotTo(HaveOccurred())
-
-	return adapter
-}
-
 func (cr *ClusterRunner) Reset() error {
 	client := cr.NewClient()
 

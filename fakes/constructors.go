@@ -1,11 +1,11 @@
 package fakes
 
-func NewFakeClient() (*FakeClient, *FakeAgent, *FakeKV, *FakeISession) {
+func NewFakeClient() (*FakeClient, *FakeAgent, *FakeKV, *FakeSession) {
 	client := &FakeClient{}
 
 	agent := &FakeAgent{}
 	kv := &FakeKV{}
-	session := &FakeISession{}
+	session := &FakeSession{}
 
 	client.AgentReturns(agent)
 	client.KVReturns(kv)
