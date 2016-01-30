@@ -109,18 +109,15 @@ func (cr *ClusterRunner) Start() {
 	cr.running = true
 }
 
-func (cr *ClusterRunner) NewClient() *api.Client {
+func (cr *ClusterRunner) NewClient() consuladapter.Client {
 	client, err := api.NewClient(&api.Config{
 		Address:    cr.Address(),
 		Scheme:     cr.scheme,
 		HttpClient: cf_http.NewStreamingClient(),
 	})
 	Expect(err).NotTo(HaveOccurred())
-	return client
-}
 
-func (cr *ClusterRunner) NewConsulClient() consuladapter.Client {
-	return consuladapter.NewConsulClient(cr.NewClient())
+	return consuladapter.NewConsulClient(client)
 }
 
 func (cr *ClusterRunner) WaitUntilReady() {

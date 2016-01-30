@@ -21,6 +21,12 @@ type FakeClient struct {
 	sessionReturns     struct {
 		result1 consuladapter.Session
 	}
+	CatalogStub        func() consuladapter.Catalog
+	catalogMutex       sync.RWMutex
+	catalogArgsForCall []struct{}
+	catalogReturns     struct {
+		result1 consuladapter.Catalog
+	}
 	KVStub        func() consuladapter.KV
 	kVMutex       sync.RWMutex
 	kVArgsForCall []struct{}
@@ -83,6 +89,30 @@ func (fake *FakeClient) SessionReturns(result1 consuladapter.Session) {
 	fake.SessionStub = nil
 	fake.sessionReturns = struct {
 		result1 consuladapter.Session
+	}{result1}
+}
+
+func (fake *FakeClient) Catalog() consuladapter.Catalog {
+	fake.catalogMutex.Lock()
+	fake.catalogArgsForCall = append(fake.catalogArgsForCall, struct{}{})
+	fake.catalogMutex.Unlock()
+	if fake.CatalogStub != nil {
+		return fake.CatalogStub()
+	} else {
+		return fake.catalogReturns.result1
+	}
+}
+
+func (fake *FakeClient) CatalogCallCount() int {
+	fake.catalogMutex.RLock()
+	defer fake.catalogMutex.RUnlock()
+	return len(fake.catalogArgsForCall)
+}
+
+func (fake *FakeClient) CatalogReturns(result1 consuladapter.Catalog) {
+	fake.CatalogStub = nil
+	fake.catalogReturns = struct {
+		result1 consuladapter.Catalog
 	}{result1}
 }
 

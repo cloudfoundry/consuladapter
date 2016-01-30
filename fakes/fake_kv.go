@@ -52,6 +52,16 @@ type FakeKV struct {
 		result2 *api.WriteMeta
 		result3 error
 	}
+	DeleteTreeStub        func(prefix string, w *api.WriteOptions) (*api.WriteMeta, error)
+	deleteTreeMutex       sync.RWMutex
+	deleteTreeArgsForCall []struct {
+		prefix string
+		w      *api.WriteOptions
+	}
+	deleteTreeReturns struct {
+		result1 *api.WriteMeta
+		result2 error
+	}
 }
 
 func (fake *FakeKV) Get(key string, q *api.QueryOptions) (*api.KVPair, *api.QueryMeta, error) {
@@ -191,6 +201,40 @@ func (fake *FakeKV) ReleaseReturns(result1 bool, result2 *api.WriteMeta, result3
 		result2 *api.WriteMeta
 		result3 error
 	}{result1, result2, result3}
+}
+
+func (fake *FakeKV) DeleteTree(prefix string, w *api.WriteOptions) (*api.WriteMeta, error) {
+	fake.deleteTreeMutex.Lock()
+	fake.deleteTreeArgsForCall = append(fake.deleteTreeArgsForCall, struct {
+		prefix string
+		w      *api.WriteOptions
+	}{prefix, w})
+	fake.deleteTreeMutex.Unlock()
+	if fake.DeleteTreeStub != nil {
+		return fake.DeleteTreeStub(prefix, w)
+	} else {
+		return fake.deleteTreeReturns.result1, fake.deleteTreeReturns.result2
+	}
+}
+
+func (fake *FakeKV) DeleteTreeCallCount() int {
+	fake.deleteTreeMutex.RLock()
+	defer fake.deleteTreeMutex.RUnlock()
+	return len(fake.deleteTreeArgsForCall)
+}
+
+func (fake *FakeKV) DeleteTreeArgsForCall(i int) (string, *api.WriteOptions) {
+	fake.deleteTreeMutex.RLock()
+	defer fake.deleteTreeMutex.RUnlock()
+	return fake.deleteTreeArgsForCall[i].prefix, fake.deleteTreeArgsForCall[i].w
+}
+
+func (fake *FakeKV) DeleteTreeReturns(result1 *api.WriteMeta, result2 error) {
+	fake.DeleteTreeStub = nil
+	fake.deleteTreeReturns = struct {
+		result1 *api.WriteMeta
+		result2 error
+	}{result1, result2}
 }
 
 var _ consuladapter.KV = new(FakeKV)
