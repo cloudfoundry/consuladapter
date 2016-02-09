@@ -13,6 +13,7 @@ type Agent interface {
 	WarnTTL(checkID, note string) error
 	FailTTL(checkID, note string) error
 	NodeName() (string, error)
+	CheckDeregister(checkID string) error
 }
 
 type agent struct {
@@ -37,6 +38,10 @@ func (a *agent) ServiceRegister(service *api.AgentServiceRegistration) error {
 
 func (a *agent) ServiceDeregister(serviceID string) error {
 	return a.agent.ServiceDeregister(serviceID)
+}
+
+func (a *agent) CheckDeregister(checkID string) error {
+	return a.agent.CheckDeregister(checkID)
 }
 
 func (a *agent) PassTTL(checkID, note string) error {

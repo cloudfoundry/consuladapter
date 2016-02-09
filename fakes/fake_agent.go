@@ -12,14 +12,14 @@ type FakeAgent struct {
 	ChecksStub        func() (map[string]*api.AgentCheck, error)
 	checksMutex       sync.RWMutex
 	checksArgsForCall []struct{}
-	checksReturns     struct {
+	checksReturns struct {
 		result1 map[string]*api.AgentCheck
 		result2 error
 	}
 	ServicesStub        func() (map[string]*api.AgentService, error)
 	servicesMutex       sync.RWMutex
 	servicesArgsForCall []struct{}
-	servicesReturns     struct {
+	servicesReturns struct {
 		result1 map[string]*api.AgentService
 		result2 error
 	}
@@ -69,9 +69,17 @@ type FakeAgent struct {
 	NodeNameStub        func() (string, error)
 	nodeNameMutex       sync.RWMutex
 	nodeNameArgsForCall []struct{}
-	nodeNameReturns     struct {
+	nodeNameReturns struct {
 		result1 string
 		result2 error
+	}
+	CheckDeregisterStub        func(checkID string) error
+	checkDeregisterMutex       sync.RWMutex
+	checkDeregisterArgsForCall []struct {
+		checkID string
+	}
+	checkDeregisterReturns struct {
+		result1 error
 	}
 }
 
@@ -311,6 +319,38 @@ func (fake *FakeAgent) NodeNameReturns(result1 string, result2 error) {
 		result1 string
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeAgent) CheckDeregister(checkID string) error {
+	fake.checkDeregisterMutex.Lock()
+	fake.checkDeregisterArgsForCall = append(fake.checkDeregisterArgsForCall, struct {
+		checkID string
+	}{checkID})
+	fake.checkDeregisterMutex.Unlock()
+	if fake.CheckDeregisterStub != nil {
+		return fake.CheckDeregisterStub(checkID)
+	} else {
+		return fake.checkDeregisterReturns.result1
+	}
+}
+
+func (fake *FakeAgent) CheckDeregisterCallCount() int {
+	fake.checkDeregisterMutex.RLock()
+	defer fake.checkDeregisterMutex.RUnlock()
+	return len(fake.checkDeregisterArgsForCall)
+}
+
+func (fake *FakeAgent) CheckDeregisterArgsForCall(i int) string {
+	fake.checkDeregisterMutex.RLock()
+	defer fake.checkDeregisterMutex.RUnlock()
+	return fake.checkDeregisterArgsForCall[i].checkID
+}
+
+func (fake *FakeAgent) CheckDeregisterReturns(result1 error) {
+	fake.CheckDeregisterStub = nil
+	fake.checkDeregisterReturns = struct {
+		result1 error
+	}{result1}
 }
 
 var _ consuladapter.Agent = new(FakeAgent)

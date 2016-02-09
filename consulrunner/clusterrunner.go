@@ -184,11 +184,39 @@ func (cr *ClusterRunner) Reset() error {
 		}
 	}
 
-	_, err1 := client.KV().DeleteTree("", nil)
+	if err != nil {
+		return err
+	}
+
+	services, err := client.Agent().Services()
+	if err == nil {
+		for _, service := range services {
+			err1 := client.Agent().ServiceDeregister(service.ID)
+			if err1 != nil {
+				err = err1
+			}
+		}
+	}
 
 	if err != nil {
 		return err
 	}
+
+	checks, err := client.Agent().Checks()
+	if err == nil {
+		for _, check := range checks {
+			err1 := client.Agent().CheckDeregister(check.CheckID)
+			if err1 != nil {
+				err = err1
+			}
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
+	_, err1 := client.KV().DeleteTree("", nil)
 
 	return err1
 }
