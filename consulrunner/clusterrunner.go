@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/consuladapter"
-	"github.com/cloudfoundry-incubator/cf_http"
 	"github.com/hashicorp/consul/api"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
@@ -113,7 +113,7 @@ func (cr *ClusterRunner) NewClient() consuladapter.Client {
 	client, err := api.NewClient(&api.Config{
 		Address:    cr.Address(),
 		Scheme:     cr.scheme,
-		HttpClient: cf_http.NewStreamingClient(),
+		HttpClient: cfhttp.NewStreamingClient(),
 	})
 	Expect(err).NotTo(HaveOccurred())
 

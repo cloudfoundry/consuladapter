@@ -1,7 +1,7 @@
 package consuladapter
 
 import (
-	"github.com/cloudfoundry-incubator/cf_http"
+	"code.cloudfoundry.org/cfhttp"
 	"github.com/hashicorp/consul/api"
 )
 
@@ -39,7 +39,7 @@ func NewClientFromUrl(urlString string) (Client, error) {
 	config := &api.Config{
 		Address:    address,
 		Scheme:     scheme,
-		HttpClient: cf_http.NewStreamingClient(),
+		HttpClient: cfhttp.NewStreamingClient(),
 	}
 
 	c, err := api.NewClient(config)
