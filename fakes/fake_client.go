@@ -4,7 +4,7 @@ package fakes
 import (
 	"sync"
 
-	"github.com/cloudfoundry-incubator/consuladapter"
+	"code.cloudfoundry.org/consuladapter"
 	"github.com/hashicorp/consul/api"
 )
 
@@ -12,25 +12,25 @@ type FakeClient struct {
 	AgentStub        func() consuladapter.Agent
 	agentMutex       sync.RWMutex
 	agentArgsForCall []struct{}
-	agentReturns struct {
+	agentReturns     struct {
 		result1 consuladapter.Agent
 	}
 	SessionStub        func() consuladapter.Session
 	sessionMutex       sync.RWMutex
 	sessionArgsForCall []struct{}
-	sessionReturns struct {
+	sessionReturns     struct {
 		result1 consuladapter.Session
 	}
 	CatalogStub        func() consuladapter.Catalog
 	catalogMutex       sync.RWMutex
 	catalogArgsForCall []struct{}
-	catalogReturns struct {
+	catalogReturns     struct {
 		result1 consuladapter.Catalog
 	}
 	KVStub        func() consuladapter.KV
 	kVMutex       sync.RWMutex
 	kVArgsForCall []struct{}
-	kVReturns struct {
+	kVReturns     struct {
 		result1 consuladapter.KV
 	}
 	LockOptsStub        func(opts *api.LockOptions) (consuladapter.Lock, error)

@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"code.cloudfoundry.org/consuladapter"
 	"github.com/cloudfoundry-incubator/cf_http"
-	"github.com/cloudfoundry-incubator/consuladapter"
 	"github.com/hashicorp/consul/api"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
