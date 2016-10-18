@@ -12,6 +12,7 @@ type Client interface {
 	Session() Session
 	Catalog() Catalog
 	KV() KV
+	Status() Status
 
 	LockOpts(opts *api.LockOptions) (Lock, error)
 }
@@ -68,4 +69,8 @@ func (c *client) Session() Session {
 
 func (c *client) LockOpts(opts *api.LockOptions) (Lock, error) {
 	return c.client.LockOpts(opts)
+}
+
+func (c *client) Status() Status {
+	return NewConsulStatus(c.client.Status())
 }
