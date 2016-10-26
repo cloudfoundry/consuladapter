@@ -191,6 +191,9 @@ func (cr *ClusterRunner) Reset() error {
 	services, err := client.Agent().Services()
 	if err == nil {
 		for _, service := range services {
+			if service.Service == "consul" {
+				continue
+			}
 			err1 := client.Agent().ServiceDeregister(service.ID)
 			if err1 != nil {
 				err = err1
