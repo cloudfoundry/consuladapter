@@ -24,6 +24,7 @@ const (
 )
 
 type configFile struct {
+	Performace         map[string]int `json:"performance,omitempty"`
 	BootstrapExpect    int            `json:"bootstrap_expect"`
 	Datacenter         string         `json:"datacenter"`
 	DataDir            string         `json:"data_dir"`
@@ -42,6 +43,7 @@ type configFile struct {
 }
 
 func newConfigFile(
+	includePerformanceConfig bool,
 	dataDir string,
 	nodeName string,
 	clusterStartingPort int,
@@ -64,7 +66,7 @@ func newConfigFile(
 		joinAddresses[i] = fmt.Sprintf("127.0.0.1:%d", clusterStartingPort+i*PortOffsetLength+portOffsetSerfLAN)
 	}
 
-	return configFile{
+	config := configFile{
 		BootstrapExpect:    numNodes,
 		DataDir:            dataDir,
 		LogLevel:           defaultLogLevel,
@@ -80,9 +82,16 @@ func newConfigFile(
 		DisableUpdateCheck: true,
 		SessionTTL:         sessionTTL.String(),
 	}
+
+	if includePerformanceConfig {
+		config.Performace = map[string]int{"raft_multiplier": 1}
+	}
+
+	return config
 }
 
 func writeConfigFile(
+	includePerformanceConfig bool,
 	configDir string,
 	dataDir string,
 	nodeName string,
@@ -95,7 +104,7 @@ func writeConfigFile(
 	file, err := os.Create(filePath)
 	Expect(err).NotTo(HaveOccurred())
 
-	config := newConfigFile(dataDir, nodeName, clusterStartingPort, index, numNodes, sessionTTL)
+	config := newConfigFile(includePerformanceConfig, dataDir, nodeName, clusterStartingPort, index, numNodes, sessionTTL)
 	configJSON, err := json.Marshal(config)
 	Expect(err).NotTo(HaveOccurred())
 

@@ -17,7 +17,10 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/gomega/gexec"
 )
 
 type ClusterRunner struct {
@@ -55,6 +58,21 @@ func (cr *ClusterRunner) SessionTTL() time.Duration {
 	return cr.sessionTTL
 }
 
+func (cr *ClusterRunner) ConsulVersion() string {
+	cmd := exec.Command("consul", "-v")
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	Expect(err).NotTo(HaveOccurred())
+	Eventually(session).Should(gexec.Exit(0))
+	Expect(session.Out).To(gbytes.Say("Consul v"))
+	lines := strings.Split(string(session.Out.Contents()), "\n")
+	versionLine := lines[0]
+	return strings.TrimPrefix(versionLine, "Consul v")
+}
+
+func (cr *ClusterRunner) HasPerformanceFlag() bool {
+	return !strings.HasPrefix(cr.ConsulVersion(), "0.6")
+}
+
 func (cr *ClusterRunner) Start() {
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
@@ -79,6 +97,7 @@ func (cr *ClusterRunner) Start() {
 		os.MkdirAll(nodeDataDir, 0700)
 
 		configFilePath := writeConfigFile(
+			cr.HasPerformanceFlag(),
 			cr.configDir,
 			nodeDataDir,
 			iStr,
