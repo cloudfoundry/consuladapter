@@ -33,7 +33,7 @@ var (
 )
 
 var _ = BeforeSuite(func() {
-	basePath = path.Join(os.Getenv("GOPATH"), "src/code.cloudfoundry.org/consuladapter/fixtures")
+	basePath = path.Join(os.Getenv("DIEGO_RELEASE_DIR"), "src/code.cloudfoundry.org/consuladapter/fixtures")
 	consulCACert = path.Join(basePath, "consul-ca.crt")
 	consulClientCert = path.Join(basePath, "consul.crt")
 	consulCLientKey = path.Join(basePath, "consul.key")
