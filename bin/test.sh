@@ -1,0 +1,3 @@
+export PATH=$PATH:$(go env GOPATH)/bin
+go build -o $(go env GOPATH)/bin/consul github.com/hashicorp/consul
+go test -v ./...
