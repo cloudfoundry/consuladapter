@@ -24,6 +24,6 @@ require (
 	github.com/hashicorp/yamux v0.0.0-20210316155119-a95892c5f864 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.20.2
+	github.com/onsi/gomega v1.22.1
 	github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00
 )
