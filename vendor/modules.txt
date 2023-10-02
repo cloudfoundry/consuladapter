@@ -2,17 +2,20 @@
 ## explicit
 code.cloudfoundry.org/cfhttp/v2
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
+## explicit
 github.com/Azure/go-ansiterm
 github.com/Azure/go-ansiterm/winterm
 # github.com/DataDog/datadog-go v4.7.0+incompatible
 ## explicit
 github.com/DataDog/datadog-go/statsd
 # github.com/Microsoft/go-winio v0.5.0
+## explicit; go 1.12
 github.com/Microsoft/go-winio
 github.com/Microsoft/go-winio/pkg/guid
 github.com/Microsoft/go-winio/pkg/security
 github.com/Microsoft/go-winio/vhd
 # github.com/Microsoft/hcsshim v0.8.14
+## explicit; go 1.13
 github.com/Microsoft/hcsshim
 github.com/Microsoft/hcsshim/computestorage
 github.com/Microsoft/hcsshim/internal/cow
@@ -34,30 +37,40 @@ github.com/Microsoft/hcsshim/internal/wclayer
 github.com/Microsoft/hcsshim/internal/winapi
 github.com/Microsoft/hcsshim/osversion
 # github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
+## explicit
 github.com/armon/circbuf
 # github.com/armon/go-metrics v0.0.0-20190430140413-ec5e00d3c878
+## explicit; go 1.12
 github.com/armon/go-metrics
 github.com/armon/go-metrics/circonus
 github.com/armon/go-metrics/datadog
 # github.com/armon/go-radix v1.0.0
+## explicit
 github.com/armon/go-radix
 # github.com/bgentry/speakeasy v0.1.0
+## explicit
 github.com/bgentry/speakeasy
 # github.com/boltdb/bolt v1.3.1
+## explicit
 github.com/boltdb/bolt
 # github.com/circonus-labs/circonus-gometrics v2.3.1+incompatible
+## explicit
 github.com/circonus-labs/circonus-gometrics
 github.com/circonus-labs/circonus-gometrics/api
 github.com/circonus-labs/circonus-gometrics/api/config
 github.com/circonus-labs/circonus-gometrics/checkmgr
 # github.com/circonus-labs/circonusllhist v0.1.3
+## explicit
 github.com/circonus-labs/circonusllhist
 # github.com/containerd/cgroups v0.0.0-20200531161412-0dbf7f05ba59
+## explicit; go 1.13
 github.com/containerd/cgroups/stats/v1
 # github.com/containerd/containerd v1.4.3
+## explicit
 github.com/containerd/containerd/log
 github.com/containerd/containerd/sys
 # github.com/docker/docker v20.10.7+incompatible
+## explicit
 github.com/docker/docker/api/types/blkiodev
 github.com/docker/docker/api/types/container
 github.com/docker/docker/api/types/filters
@@ -79,26 +92,33 @@ github.com/docker/docker/pkg/pools
 github.com/docker/docker/pkg/stdcopy
 github.com/docker/docker/pkg/system
 # github.com/docker/go-connections v0.4.0
+## explicit
 github.com/docker/go-connections/nat
 # github.com/docker/go-units v0.4.0
+## explicit
 github.com/docker/go-units
 # github.com/elazarl/go-bindata-assetfs v1.0.1
 ## explicit
 github.com/elazarl/go-bindata-assetfs
 # github.com/fatih/color v1.9.0
+## explicit; go 1.13
 github.com/fatih/color
 # github.com/fsnotify/fsnotify v1.4.9
+## explicit; go 1.13
 github.com/fsnotify/fsnotify
 # github.com/fsouza/go-dockerclient v1.7.3
-## explicit
+## explicit; go 1.15
 github.com/fsouza/go-dockerclient
 # github.com/gogo/protobuf v1.3.2
+## explicit; go 1.15
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
 # github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c
+## explicit
 github.com/google/btree
-# github.com/google/go-cmp v0.5.8
+# github.com/google/go-cmp v0.5.9
+## explicit; go 1.13
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
@@ -122,36 +142,46 @@ github.com/hashicorp/consul/tlsutil
 github.com/hashicorp/consul/types
 github.com/hashicorp/consul/watch
 # github.com/hashicorp/errwrap v1.0.0
+## explicit
 github.com/hashicorp/errwrap
 # github.com/hashicorp/go-checkpoint v0.5.0
 ## explicit
 github.com/hashicorp/go-checkpoint
 # github.com/hashicorp/go-cleanhttp v0.5.2
-## explicit
+## explicit; go 1.13
 github.com/hashicorp/go-cleanhttp
 # github.com/hashicorp/go-hclog v0.9.1
+## explicit
 github.com/hashicorp/go-hclog
 # github.com/hashicorp/go-immutable-radix v1.3.0
+## explicit
 github.com/hashicorp/go-immutable-radix
 # github.com/hashicorp/go-memdb v1.3.2
-## explicit
+## explicit; go 1.12
 github.com/hashicorp/go-memdb
 # github.com/hashicorp/go-msgpack v0.5.5
+## explicit
 github.com/hashicorp/go-msgpack/codec
 # github.com/hashicorp/go-multierror v1.1.0
+## explicit; go 1.14
 github.com/hashicorp/go-multierror
 # github.com/hashicorp/go-reap v0.0.0-20170704170343-bf58d8a43e7b
 ## explicit
 github.com/hashicorp/go-reap
 # github.com/hashicorp/go-retryablehttp v0.5.3
+## explicit
 github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-sockaddr v1.0.0
+## explicit
 github.com/hashicorp/go-sockaddr
 # github.com/hashicorp/go-syslog v1.0.0
+## explicit
 github.com/hashicorp/go-syslog
 # github.com/hashicorp/go-uuid v1.0.1
+## explicit
 github.com/hashicorp/go-uuid
 # github.com/hashicorp/golang-lru v0.5.4
+## explicit; go 1.12
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
 # github.com/hashicorp/hcl v1.0.0
@@ -172,61 +202,74 @@ github.com/hashicorp/hil/ast
 github.com/hashicorp/hil/parser
 github.com/hashicorp/hil/scanner
 # github.com/hashicorp/logutils v1.0.0
+## explicit
 github.com/hashicorp/logutils
 # github.com/hashicorp/memberlist v0.2.2
+## explicit; go 1.12
 github.com/hashicorp/memberlist
 # github.com/hashicorp/net-rpc-msgpackrpc v0.0.0-20151116020338-a14192a58a69
 ## explicit
 github.com/hashicorp/net-rpc-msgpackrpc
 # github.com/hashicorp/raft v1.3.1
-## explicit
+## explicit; go 1.12
 github.com/hashicorp/raft
 # github.com/hashicorp/raft-boltdb v0.0.0-20210422161416-485fa74b0b01
-## explicit
+## explicit; go 1.12
 github.com/hashicorp/raft-boltdb
 # github.com/hashicorp/scada-client v0.0.0-20160601224023-6e896784f66f
 ## explicit
 github.com/hashicorp/scada-client
 github.com/hashicorp/scada-client/scada
 # github.com/hashicorp/serf v0.9.5
-## explicit
+## explicit; go 1.12
 github.com/hashicorp/serf/coordinate
 github.com/hashicorp/serf/serf
 # github.com/hashicorp/yamux v0.0.0-20210316155119-a95892c5f864
-## explicit
+## explicit; go 1.15
 github.com/hashicorp/yamux
 # github.com/mattn/go-colorable v0.1.6
+## explicit; go 1.13
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.12
+## explicit; go 1.12
 github.com/mattn/go-isatty
 # github.com/miekg/dns v1.1.26
+## explicit; go 1.12
 github.com/miekg/dns
 # github.com/mitchellh/cli v1.1.0
+## explicit; go 1.11
 github.com/mitchellh/cli
 # github.com/mitchellh/copystructure v1.2.0
-## explicit
+## explicit; go 1.15
 github.com/mitchellh/copystructure
 # github.com/mitchellh/mapstructure v1.1.2
+## explicit
 github.com/mitchellh/mapstructure
 # github.com/mitchellh/reflectwalk v1.0.2
+## explicit
 github.com/mitchellh/reflectwalk
 # github.com/moby/sys/mount v0.2.0
+## explicit; go 1.14
 github.com/moby/sys/mount
 # github.com/moby/sys/mountinfo v0.4.0
+## explicit; go 1.14
 github.com/moby/sys/mountinfo
 # github.com/moby/term v0.0.0-20201216013528-df9cb8a40635
+## explicit; go 1.13
 github.com/moby/term
 github.com/moby/term/windows
 # github.com/morikuni/aec v1.0.0
+## explicit
 github.com/morikuni/aec
 # github.com/nxadm/tail v1.4.8
+## explicit; go 1.13
 github.com/nxadm/tail
 github.com/nxadm/tail/ratelimiter
 github.com/nxadm/tail/util
 github.com/nxadm/tail/watch
 github.com/nxadm/tail/winfile
 # github.com/onsi/ginkgo v1.16.5
-## explicit
+## explicit; go 1.16
 github.com/onsi/ginkgo
 github.com/onsi/ginkgo/config
 github.com/onsi/ginkgo/formatter
@@ -247,8 +290,8 @@ github.com/onsi/ginkgo/reporters/stenographer
 github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 github.com/onsi/ginkgo/types
-# github.com/onsi/gomega v1.20.2
-## explicit
+# github.com/onsi/gomega v1.25.0
+## explicit; go 1.18
 github.com/onsi/gomega
 github.com/onsi/gomega/format
 github.com/onsi/gomega/gbytes
@@ -262,40 +305,52 @@ github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
 # github.com/opencontainers/go-digest v1.0.0
+## explicit; go 1.13
 github.com/opencontainers/go-digest
 # github.com/opencontainers/image-spec v1.0.1
+## explicit
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
 # github.com/opencontainers/runc v0.1.1
+## explicit
 github.com/opencontainers/runc/libcontainer/user
 # github.com/pkg/errors v0.9.1
+## explicit
 github.com/pkg/errors
 # github.com/posener/complete v1.2.3
+## explicit; go 1.13
 github.com/posener/complete
 github.com/posener/complete/cmd
 github.com/posener/complete/cmd/install
 # github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f
+## explicit
 github.com/ryanuber/columnize
 # github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529
+## explicit
 github.com/sean-/seed
 # github.com/sirupsen/logrus v1.7.0
+## explicit; go 1.13
 github.com/sirupsen/logrus
 # github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00
 ## explicit
 github.com/tedsuo/ifrit
 github.com/tedsuo/ifrit/ginkgomon
 # github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926
+## explicit
 github.com/tv42/httpunix
 # go.opencensus.io v0.22.0
+## explicit
 go.opencensus.io
 go.opencensus.io/internal
 go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/tracestate
-# golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+# golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+## explicit; go 1.11
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/ed25519/internal/edwards25519
-# golang.org/x/net v0.0.0-20220722155237-a158d28d115b
+# golang.org/x/net v0.5.0
+## explicit; go 1.17
 golang.org/x/net/bpf
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -304,12 +359,14 @@ golang.org/x/net/internal/iana
 golang.org/x/net/internal/socket
 golang.org/x/net/ipv4
 golang.org/x/net/ipv6
-# golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
+# golang.org/x/sys v0.4.0
+## explicit; go 1.17
 golang.org/x/sys/execabs
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.3.7
+# golang.org/x/text v0.6.0
+## explicit; go 1.17
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -328,7 +385,9 @@ golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
+## explicit
 gopkg.in/tomb.v1
 # gopkg.in/yaml.v3 v3.0.1
+## explicit
 gopkg.in/yaml.v3
 # github.com/hashicorp/consul => github.com/hashicorp/consul v0.7.0
