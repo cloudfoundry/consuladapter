@@ -69,7 +69,7 @@ github.com/containerd/cgroups/stats/v1
 ## explicit
 github.com/containerd/containerd/log
 github.com/containerd/containerd/sys
-# github.com/docker/docker v20.10.7+incompatible
+# github.com/docker/docker v20.10.24+incompatible
 ## explicit
 github.com/docker/docker/api/types/blkiodev
 github.com/docker/docker/api/types/container

@@ -26,7 +26,7 @@ require (
 	github.com/circonus-labs/circonusllhist v0.1.3 // indirect
 	github.com/containerd/cgroups v0.0.0-20200531161412-0dbf7f05ba59 // indirect
 	github.com/containerd/containerd v1.4.3 // indirect
-	github.com/docker/docker v20.10.7+incompatible // indirect
+	github.com/docker/docker v20.10.24+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/elazarl/go-bindata-assetfs v1.0.1 // indirect
