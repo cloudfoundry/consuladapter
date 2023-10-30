@@ -1,6 +1,8 @@
 # code.cloudfoundry.org/cfhttp/v2 v2.0.1-0.20210513172332-4c5ee488a657
 ## explicit
 code.cloudfoundry.org/cfhttp/v2
+# github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24
+## explicit; go 1.20
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 ## explicit
 github.com/Azure/go-ansiterm
@@ -12,30 +14,6 @@ github.com/DataDog/datadog-go/statsd
 ## explicit; go 1.13
 github.com/Microsoft/go-winio
 github.com/Microsoft/go-winio/pkg/guid
-github.com/Microsoft/go-winio/pkg/security
-github.com/Microsoft/go-winio/vhd
-# github.com/Microsoft/hcsshim v0.8.25
-## explicit; go 1.13
-github.com/Microsoft/hcsshim
-github.com/Microsoft/hcsshim/computestorage
-github.com/Microsoft/hcsshim/internal/cow
-github.com/Microsoft/hcsshim/internal/hcs
-github.com/Microsoft/hcsshim/internal/hcs/schema1
-github.com/Microsoft/hcsshim/internal/hcs/schema2
-github.com/Microsoft/hcsshim/internal/hcserror
-github.com/Microsoft/hcsshim/internal/hns
-github.com/Microsoft/hcsshim/internal/interop
-github.com/Microsoft/hcsshim/internal/log
-github.com/Microsoft/hcsshim/internal/logfields
-github.com/Microsoft/hcsshim/internal/longpath
-github.com/Microsoft/hcsshim/internal/mergemaps
-github.com/Microsoft/hcsshim/internal/oc
-github.com/Microsoft/hcsshim/internal/safefile
-github.com/Microsoft/hcsshim/internal/timeout
-github.com/Microsoft/hcsshim/internal/vmcompute
-github.com/Microsoft/hcsshim/internal/wclayer
-github.com/Microsoft/hcsshim/internal/winapi
-github.com/Microsoft/hcsshim/osversion
 # github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 ## explicit
 github.com/armon/circbuf
@@ -62,15 +40,11 @@ github.com/circonus-labs/circonus-gometrics/checkmgr
 # github.com/circonus-labs/circonusllhist v0.1.3
 ## explicit
 github.com/circonus-labs/circonusllhist
-# github.com/containerd/cgroups v1.0.3
-## explicit; go 1.16
-github.com/containerd/cgroups/stats/v1
 # github.com/containerd/containerd v1.5.18
 ## explicit; go 1.17
 github.com/containerd/containerd/log
 github.com/containerd/containerd/pkg/userns
-github.com/containerd/containerd/sys
-# github.com/docker/docker v20.10.24+incompatible
+# github.com/docker/docker v24.0.7+incompatible
 ## explicit
 github.com/docker/docker/api/types/blkiodev
 github.com/docker/docker/api/types/container
@@ -89,7 +63,9 @@ github.com/docker/docker/pkg/idtools
 github.com/docker/docker/pkg/ioutils
 github.com/docker/docker/pkg/jsonmessage
 github.com/docker/docker/pkg/longpath
+github.com/docker/docker/pkg/meminfo
 github.com/docker/docker/pkg/pools
+github.com/docker/docker/pkg/process
 github.com/docker/docker/pkg/stdcopy
 github.com/docker/docker/pkg/system
 # github.com/docker/go-connections v0.4.0
@@ -112,12 +88,7 @@ github.com/fsnotify/fsnotify
 github.com/fsouza/go-dockerclient
 # github.com/gogo/protobuf v1.3.2
 ## explicit; go 1.15
-github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
-github.com/gogo/protobuf/protoc-gen-gogo/descriptor
-# github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
-## explicit
-github.com/golang/groupcache/lru
 # github.com/google/btree v1.0.0
 ## explicit
 github.com/google/btree
@@ -231,6 +202,13 @@ github.com/hashicorp/serf/serf
 # github.com/hashicorp/yamux v0.0.0-20210316155119-a95892c5f864
 ## explicit; go 1.15
 github.com/hashicorp/yamux
+# github.com/klauspost/compress v1.11.13
+## explicit; go 1.13
+github.com/klauspost/compress/fse
+github.com/klauspost/compress/huff0
+github.com/klauspost/compress/snappy
+github.com/klauspost/compress/zstd
+github.com/klauspost/compress/zstd/internal/xxhash
 # github.com/mattn/go-colorable v0.1.6
 ## explicit; go 1.13
 github.com/mattn/go-colorable
@@ -252,12 +230,12 @@ github.com/mitchellh/mapstructure
 # github.com/mitchellh/reflectwalk v1.0.2
 ## explicit
 github.com/mitchellh/reflectwalk
-# github.com/moby/sys/mount v0.2.0
-## explicit; go 1.14
-github.com/moby/sys/mount
-# github.com/moby/sys/mountinfo v0.5.0
-## explicit; go 1.16
-github.com/moby/sys/mountinfo
+# github.com/moby/patternmatcher v0.6.0
+## explicit; go 1.19
+github.com/moby/patternmatcher
+# github.com/moby/sys/sequential v0.5.0
+## explicit; go 1.17
+github.com/moby/sys/sequential
 # github.com/moby/term v0.0.0-20201216013528-df9cb8a40635
 ## explicit; go 1.13
 github.com/moby/term
@@ -342,13 +320,6 @@ github.com/tedsuo/ifrit/ginkgomon
 # github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926
 ## explicit
 github.com/tv42/httpunix
-# go.opencensus.io v0.22.3
-## explicit; go 1.13
-go.opencensus.io
-go.opencensus.io/internal
-go.opencensus.io/trace
-go.opencensus.io/trace/internal
-go.opencensus.io/trace/tracestate
 # golang.org/x/crypto v0.14.0
 ## explicit; go 1.17
 golang.org/x/crypto/ed25519
@@ -364,7 +335,6 @@ golang.org/x/net/ipv4
 golang.org/x/net/ipv6
 # golang.org/x/sys v0.13.0
 ## explicit; go 1.17
-golang.org/x/sys/execabs
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.13.0
