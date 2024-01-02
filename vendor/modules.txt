@@ -40,10 +40,13 @@ github.com/circonus-labs/circonus-gometrics/checkmgr
 # github.com/circonus-labs/circonusllhist v0.1.3
 ## explicit
 github.com/circonus-labs/circonusllhist
-# github.com/containerd/containerd v1.5.18
-## explicit; go 1.17
+# github.com/containerd/containerd v1.6.26
+## explicit; go 1.19
 github.com/containerd/containerd/log
 github.com/containerd/containerd/pkg/userns
+# github.com/containerd/log v0.1.0
+## explicit; go 1.20
+github.com/containerd/log
 # github.com/docker/docker v24.0.7+incompatible
 ## explicit
 github.com/docker/docker/api/types/blkiodev
@@ -116,7 +119,7 @@ github.com/hashicorp/consul/lib
 github.com/hashicorp/consul/tlsutil
 github.com/hashicorp/consul/types
 github.com/hashicorp/consul/watch
-# github.com/hashicorp/errwrap v1.0.0
+# github.com/hashicorp/errwrap v1.1.0
 ## explicit
 github.com/hashicorp/errwrap
 # github.com/hashicorp/go-checkpoint v0.5.0
@@ -137,8 +140,8 @@ github.com/hashicorp/go-memdb
 # github.com/hashicorp/go-msgpack v0.5.5
 ## explicit
 github.com/hashicorp/go-msgpack/codec
-# github.com/hashicorp/go-multierror v1.1.0
-## explicit; go 1.14
+# github.com/hashicorp/go-multierror v1.1.1
+## explicit; go 1.13
 github.com/hashicorp/go-multierror
 # github.com/hashicorp/go-reap v0.0.0-20170704170343-bf58d8a43e7b
 ## explicit
@@ -202,13 +205,17 @@ github.com/hashicorp/serf/serf
 # github.com/hashicorp/yamux v0.0.0-20210316155119-a95892c5f864
 ## explicit; go 1.15
 github.com/hashicorp/yamux
-# github.com/klauspost/compress v1.11.13
-## explicit; go 1.13
+# github.com/klauspost/compress v1.15.9
+## explicit; go 1.16
+github.com/klauspost/compress
 github.com/klauspost/compress/fse
 github.com/klauspost/compress/huff0
-github.com/klauspost/compress/snappy
+github.com/klauspost/compress/internal/cpuinfo
+github.com/klauspost/compress/internal/snapref
 github.com/klauspost/compress/zstd
 github.com/klauspost/compress/zstd/internal/xxhash
+# github.com/kr/text v0.2.0
+## explicit
 # github.com/mattn/go-colorable v0.1.6
 ## explicit; go 1.13
 github.com/mattn/go-colorable
@@ -243,6 +250,8 @@ github.com/moby/term/windows
 # github.com/morikuni/aec v1.0.0
 ## explicit
 github.com/morikuni/aec
+# github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e
+## explicit; go 1.12
 # github.com/nxadm/tail v1.4.8
 ## explicit; go 1.13
 github.com/nxadm/tail
@@ -289,8 +298,8 @@ github.com/onsi/gomega/types
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit; go 1.13
 github.com/opencontainers/go-digest
-# github.com/opencontainers/image-spec v1.0.2
-## explicit
+# github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b
+## explicit; go 1.17
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
 # github.com/opencontainers/runc v1.1.5
@@ -310,9 +319,11 @@ github.com/ryanuber/columnize
 # github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529
 ## explicit
 github.com/sean-/seed
-# github.com/sirupsen/logrus v1.8.1
+# github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
+# github.com/stretchr/objx v0.5.0
+## explicit; go 1.12
 # github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00
 ## explicit
 github.com/tedsuo/ifrit
@@ -356,6 +367,8 @@ golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
+# gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
+## explicit
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 ## explicit
 gopkg.in/tomb.v1
